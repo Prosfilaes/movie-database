@@ -358,11 +358,6 @@ def cur_execute (s):
 
 def input_one_show (dvd_id):
     print ()
-    is_full_season = _yn_to_bool (input ("Is this a full season? (Y/N): "))
-    if is_full_season == None:
-        return;
-    elif is_full_season == True:
-        assert True, "full seasons not supported yet"
     show_name = input ("What's the name of the show? ")
     if show_name == None:
         return
@@ -418,14 +413,16 @@ def input_one_show (dvd_id):
             return
         episode_name = movie_list [0][1]
     elif len (movie_list) == 0:
-        print ("Show not found in tv_show.db; aborting")
-        return
+        if _yn_to_bool (input("Show not found in tv_show.db; continue? ")):
+            episode_name = input("Enter episode name: ")
+        else:
+            return
     else:
         print ("Impossible data returned; bad database.")
         print (movie_list)
         return;
       
-    hs_str = input ("Have you seen this episode or season? (Y/N): ")
+    hs_str = input ("Have you seen this episode? (Y/N): ")
     have_watched = _yn_to_bool (hs_str)
 
     sort_episode_name = mangle_name_for_sort (episode_name)
