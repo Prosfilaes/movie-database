@@ -6,12 +6,7 @@ import moviedb
 
 try:
     moviedb.open ()
-    dvd_id = moviedb.new_dvd ()
-    moviedb.preload_movie_values ()
-    movie_id = 0
-    while not movie_id == None:
-        movie_id = moviedb.input_one_movie (dvd_id)
-    moviedb.close_dvd (dvd_id)
+    moviedb.add_people ()
     moviedb.close_database ()
 except mdb.Error as e:
     print (e)

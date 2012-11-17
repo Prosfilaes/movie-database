@@ -42,8 +42,8 @@ try:
                  "movie_id2 SMALLINT (5) UNSIGNED NOT NULL, "
                  "INDEX mid_idx (movie_id1));")
     cur.execute ("INSERT INTO m2m "
-                 "SELECT DISTINCT p1.movie_id, p2.movie_id FROM person p1 "
-                 "INNER JOIN person p2 ON p1.name = p2.name AND p1.movie_id != p2.movie_id;")
+                 "SELECT DISTINCT p1.movie_id, p2.movie_id FROM movie_people p1 "
+                 "INNER JOIN movie_people p2 ON p1.person_id = p2.person_id AND p1.movie_id != p2.movie_id;")
     cur.execute ("SELECT movie_id, bacon_num FROM moviebacon WHERE table_num = 1;")
     prior_bacon_nums = dict (cur.fetchall ())
     setup_end_time = time.clock ()

@@ -43,8 +43,8 @@ try:
                  "INDEX mid_idx (movie_id1));")
     cur.execute ("INSERT INTO small_m2m "
                  "SELECT DISTINCT m1.movie_id, m2.movie_id FROM movie m1 "
-                 "INNER JOIN person p1 ON p1.movie_id = m1.movie_id "
-                 "INNER JOIN person p2 ON p1.name = p2.name "
+                 "INNER JOIN movie_people p1 ON p1.movie_id = m1.movie_id "
+                 "INNER JOIN movie_people p2 ON p1.person_id = p2.person_id "
                  "INNER JOIN movie m2 on p2.movie_id = m2.movie_id AND m2.have_watched "
                  "WHERE m1.have_watched;")
     cur.execute ("SELECT movie_id, bacon_num FROM moviebacon WHERE table_num = 3;")

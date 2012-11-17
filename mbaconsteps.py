@@ -37,8 +37,8 @@ try:
         i += 1;
         movie_tree.append (set ())
         for movie in movie_tree[i - 1]:
-            cur.execute ("SELECT DISTINCT p2.movie_id from person p2 "
-                         "INNER JOIN person p1 ON p1.name = p2.name "
+            cur.execute ("SELECT DISTINCT p2.movie_id from movie_people p2 "
+                         "INNER JOIN movie_people p1 ON p1.person_id = p2.person_id "
                          "WHERE p1.movie_id = {} ORDER BY p2.movie_id;"
                          "".format(con.escape (movie)))     
             newbies = cur.fetchall ()

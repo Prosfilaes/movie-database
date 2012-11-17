@@ -28,8 +28,17 @@ def print_movie_table (is_full_length, watchedonly):
                     "ORDER BY movie.year, movie.sort_name;".format (is_full_length))
     rows = cur.fetchall()
     curr_year = 0
-    print ("<table>")
+    curr_decade = 0
+    first_year = True
     for row in rows:
+        if (row [1] - (row[1] % 10)) != curr_decade:
+            if not first_year: 
+                print ("<tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td><td></td></tr>")
+                print ("</table>")
+            else:
+                first_year = False
+            print ("<table>")
+            curr_decade = row[1] - (row[1] % 10)
         if row [1] != curr_year:
             print ("<tr><td>{}</td><td>{}</td></tr>".format (row [1], process_name (row [0])))
             curr_year = row[1]
@@ -82,7 +91,7 @@ try:
     # We can't just extract the keys, because we need the order for the table of contents at start
     toc_list = ("dvd", "dvdbytag", "movie", "yearfull", "yearshort", "watchedyearfull", 
                 "watchedyearshort", "moviesbytag", "majortags", "people", "altnames")
-    
+   
     print ("<ul>")
     for short_id in toc_list:
         print ("<li><a href=\"#{}\">{}</a></li>".format (short_id, tableofcontents [short_id]))
@@ -155,7 +164,8 @@ try:
             print ("<li>ERROR: not found on any DVD!</li>")
         for dvd in dvd_list:
             print ("<li>on <i><a href=\"#dvd{}\">{}</a></i></li>".format (dvd [1], process_name (dvd[0])))
-        cur.execute ("SELECT person.name FROM person WHERE person.movie_id = {} ORDER BY person.name;".format (movie [0]))
+        cur.execute ("SELECT person FROM movie_people NATURAL JOIN person_name "
+                     "WHERE movie_people.movie_id = {} ORDER BY person;".format (movie [0]))
         person_list = cur.fetchall ()
         if len (person_list) > 0:
             print ("<li>starring ", end="")
@@ -231,32 +241,38 @@ try:
     cur.execute ("CREATE TEMPORARY TABLE people_count "
                  "(arbitrary smallint(5) unsigned NOT NULL AUTO_INCREMENT, "
                  "movie_id smallint(5) unsigned, "
-                 "name varchar(180) NOT NULL, PRIMARY KEY (arbitrary)) DEFAULT CHARSET=utf8mb4;")
+                 "person_id int(10) unsigned, "
+                 "person varchar(180) NOT NULL, PRIMARY KEY (arbitrary)) DEFAULT CHARSET=utf8mb4;")
+#    print ("<p>1</p>")
     cur.execute ("INSERT INTO people_count "
-                 "(SELECT null, null, p.name FROM person p "
-                 "INNER JOIN tv_show ts ON ts.movie_id = p.movie_id "
-                 "GROUP BY p.name, ts.name, ts.season_num);")
+                 "(SELECT null, null, person_id, person FROM person_name p "
+                 "NATURAL JOIN movie_people "
+                 "NATURAL JOIN tv_show ts "
+                 "GROUP BY person, ts.name, season_num);")
+#    print ("<p>2</p>")
     cur.execute ("INSERT INTO people_count "
-                 "(SELECT null, p.movie_id movie_id, p.name name FROM person p "
-                 "INNER JOIN movie m ON m.movie_id = p.movie_id "
-                 "LEFT OUTER JOIN tv_show ts ON ts.movie_id = m.movie_id WHERE ts.movie_id IS NULL);")
-    cur.execute ("select COUNT(*), name from people_count GROUP BY name HAVING count(*) > 1 "
-                 "ORDER BY count(*) DESC, name;")
+                 "(SELECT null, movie_id, person_id, person FROM person_name "
+                 "NATURAL JOIN movie_people "
+                 "NATURAL JOIN movie m "
+                 "WHERE movie_id NOT IN (SELECT movie_id FROM tv_show));");
+#    print ("<p>3</p>")
+    cur.execute ("select COUNT(*), person, person_id from people_count GROUP BY person HAVING count(*) > 5 "
+                 "ORDER BY count(*) DESC, person;")
+#    print ("<p>4</p>");
     rows = cur.fetchall ()
     for row in rows:
         print ("<p id=\"{}\">{} ({} entries)</p>".format(labeltoid (row[1], "person"), row [1], row[0]))
-        cur.execute ('SELECT m.movie_id, m.name, m.year FROM movie m '
-                     'LEFT OUTER JOIN tv_show ts ON ts.movie_id = m.movie_id '
-                     'INNER JOIN person p ON p.movie_id = m.movie_id '
-                     'WHERE ts.movie_id IS NULL AND p.name = {0}'
-                     'ORDER BY m.sort_name, m.year;'.format (con.escape (row [1])))
+        cur.execute ('SELECT movie_id, name, year FROM movie '
+                     'NATURAL JOIN movie_people '
+                     'WHERE person_id = {0} AND movie_id NOT IN (SELECT movie_id FROM tv_show) '
+                     'ORDER BY sort_name, year;'.format (row [2]))
         movies = cur.fetchall ()
-        cur.execute ('select CONCAT("Episodes from ", ts.name, " season ", ts.season_num), MIN(m.year) '
+        cur.execute ('select CONCAT("episodes from ", ts.name, " season ", ts.season_num), MIN(m.year) '
                      'FROM movie m '
                      'INNER JOIN tv_show ts on ts.movie_id = m.movie_id '
-                     'INNER JOIN person p ON p.movie_id = m.movie_id '
-                     'WHERE p.name = {0} GROUP BY ts.name, ts.season_num'
-                     ';'.format (con.escape (row [1])))
+                     'INNER JOIN movie_people mp ON mp.movie_id = m.movie_id '
+                     'WHERE mp.person_id = {0} GROUP BY ts.name, ts.season_num'
+                     ';'.format (row [2]))
         tv_shows = cur.fetchall ()
         print ("<ul>")
         for movie in movies:
