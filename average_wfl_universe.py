@@ -33,7 +33,7 @@ def average_bacon_num (movie_tree, total_number_of_movies):
 try:
     start_time = time.clock ()
     global con, cur
-    insert = True
+    insert = False
     con = mdb.connect('localhost', 'dvdeug', '', 'DVDs', use_unicode=True, charset="utf8")
     cur = con.cursor()
     cur.execute ("SET NAMES 'utf8'")
@@ -42,9 +42,9 @@ try:
                  "movie_id2 SMALLINT (5) UNSIGNED NOT NULL, "
                  "INDEX mid_idx (movie_id1));")
     cur.execute ("INSERT INTO m2m "
-                 "SELECT DISTINCT p1.movie_id, p2.movie_id FROM movie_people p1 "
-                 "INNER JOIN movie_people p2 "
-                 "ON p1.person_id = p2.person_id AND p1.movie_id != p2.movie_id "
+                 "SELECT DISTINCT p1.movie_id, p2.movie_id FROM actor p1 "
+                 "INNER JOIN actor p2 "
+                 "ON p1.person = p2.person AND p1.movie_id != p2.movie_id "
                  "INNER JOIN movie m1 ON p1.movie_id = m1.movie_id AND m1.is_full_length AND m1.have_watched "
                  "INNER JOIN movie m2 ON p2.movie_id = m2.movie_id AND m2.is_full_length AND m2.have_watched "
                  ";")
@@ -55,9 +55,17 @@ try:
     num_movies = len (global_movie_set)
     bacon_list = [(376, average_bacon_num (movie_tree, num_movies))]
     global_movie_set.remove (376)
-
+    zero_count = 0
     for movie in global_movie_set:
         bacon_list.append ((movie, average_bacon_num (calculate_movie_data (movie)[1], num_movies)))
+        if zero_count > -1:
+            if bacon_list[-1][1] == prior_bacon_nums [bacon_list[-1][0]]:
+                zero_count += 1
+            else:
+                zero_count = -1
+            if zero_count == 3:
+                print ("Results haven't changed since last run; aborting.")
+                sys.exit (0)
     data_collection_time = time.clock ()
  
     bacon_list.sort (key=lambda x: x[1])

@@ -45,21 +45,24 @@ try:
                  "SELECT DISTINCT p1.movie_id, p2.movie_id FROM actor p1 "
                  "INNER JOIN actor p2 "
                  "ON p1.person = p2.person AND p1.movie_id != p2.movie_id "
-                 "INNER JOIN movie m1 ON p1.movie_id = m1.movie_id AND m1.is_full_length "
-                 "INNER JOIN movie m2 ON p2.movie_id = m2.movie_id AND m2.is_full_length "
+                 "INNER JOIN movie m1 ON p1.movie_id = m1.movie_id  "
+                 "INNER JOIN movie m2 ON p2.movie_id = m2.movie_id  "
+                 "WHERE m1.movie_id in (SELECT movie_id FROM tv_show) AND "
+                 "m2.movie_id in (SELECT movie_id FROM tv_show) "
                  ";")
-    cur.execute ("SELECT movie_id, bacon_num FROM moviebacon WHERE table_num = 4;")
+    cur.execute ("SELECT movie_id, bacon_num FROM moviebacon WHERE table_num = 7;")
     prior_bacon_nums = dict (cur.fetchall ())
     setup_end_time = time.clock ()
-    (global_movie_set, movie_tree) = calculate_movie_data (376)
+    root_id = 4584
+    (global_movie_set, movie_tree) = calculate_movie_data (root_id)
     num_movies = len (global_movie_set)
-    bacon_list = [(376, average_bacon_num (movie_tree, num_movies))]
-    global_movie_set.remove (376)
+    bacon_list = [(root_id, average_bacon_num (movie_tree, num_movies))]
+    global_movie_set.remove (root_id)
     zero_count = 0
     for movie in global_movie_set:
         bacon_list.append ((movie, average_bacon_num (calculate_movie_data (movie)[1], num_movies)))
         if zero_count > -1:
-            if bacon_list[-1][1] == prior_bacon_nums [bacon_list[-1][0]]:
+            if bacon_list[-1][0] in prior_bacon_nums and bacon_list[-1][1] == prior_bacon_nums [bacon_list[-1][0]]:
                 zero_count += 1
             else:
                 zero_count = -1
@@ -70,12 +73,12 @@ try:
  
     bacon_list.sort (key=lambda x: x[1])
     if insert:
-        cur.execute ("DELETE FROM moviebacon WHERE table_num = 4;")
+        cur.execute ("DELETE FROM moviebacon WHERE table_num = 7;")
     for x in bacon_list:
         cur.execute ("SELECT name, year FROM movie WHERE movie_id = {};".format (x[0]));
         name = cur.fetchall ()
         if insert:
-            cur.execute ("INSERT into moviebacon VALUES (4, {}, {});".format (x[0], x[1]))
+            cur.execute ("INSERT into moviebacon VALUES (7, {}, {});".format (x[0], x[1]))
         print ("{} ({}): {:.4f}".format(name[0][0], name[0][1], x[1]), end = ";")
         if x[0] in prior_bacon_nums:
             print (" / old {:.4f} / change {:+.4f}"

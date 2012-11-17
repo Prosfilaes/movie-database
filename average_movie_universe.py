@@ -42,8 +42,8 @@ try:
                  "movie_id2 SMALLINT (5) UNSIGNED NOT NULL, "
                  "INDEX mid_idx (movie_id1));")
     cur.execute ("INSERT INTO m2m "
-                 "SELECT DISTINCT p1.movie_id, p2.movie_id FROM movie_people p1 "
-                 "INNER JOIN movie_people p2 ON p1.person_id = p2.person_id AND p1.movie_id != p2.movie_id;")
+                 "SELECT DISTINCT p1.movie_id, p2.movie_id FROM actor p1 "
+                 "INNER JOIN actor p2 ON p1.person = p2.person AND p1.movie_id != p2.movie_id;")
     cur.execute ("SELECT movie_id, bacon_num FROM moviebacon WHERE table_num = 1;")
     prior_bacon_nums = dict (cur.fetchall ())
     setup_end_time = time.clock ()
@@ -51,9 +51,17 @@ try:
     num_movies = len (global_movie_set)
     bacon_list = [(376, average_bacon_num (movie_tree, num_movies))]
     global_movie_set.remove (376)
-
+    zero_count = 0
     for movie in global_movie_set:
         bacon_list.append ((movie, average_bacon_num (calculate_movie_data (movie)[1], num_movies)))
+        if zero_count > -1:
+            if bacon_list[-1][1] == prior_bacon_nums [bacon_list[-1][0]]:
+                zero_count += 1
+            else:
+                zero_count = -1
+            if zero_count == 3:
+                print ("Results haven't changed since last run; aborting.")
+                sys.exit (0)       
     data_collection_time = time.clock ()
  
     bacon_list.sort (key=lambda x: x[1])
