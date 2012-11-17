@@ -371,6 +371,9 @@ def input_one_show (dvd_id):
         return;
     elif is_full_season == True:
         assert True, "full seasons not supported yet"
+    show_name = input ("What's the name of the show? ")
+    if show_name == None:
+        return
     season_num = 0
     while season_num == 0:
         season_str = input ("What integer season number is it? (1-25): ")
@@ -378,12 +381,13 @@ def input_one_show (dvd_id):
             season_num = int (season_str)
             if season_num < 1 or season_num > 25:
                 season_num = 0
-    if is_full_season:
-        episode_name = ordinal [season_num] + " season"
-    else:
-        episode_name = input ("Name of the episode, or hit enter to exit: ")
-        if episode_name == "":
-            return;
+    episode_num = 0
+    while episode_num == 0:
+        episode_str = input ("What integer episode number is it? ")
+        if str.isdigit (episode_str):
+            epsiode_num = int (episode_str)
+            if season_num < 1:
+                season_num = 0
 
     movie_year = 0
     while (movie_year < 1936):
@@ -405,19 +409,36 @@ def input_one_show (dvd_id):
     tag_list = global_tag_list + local_tag_list;
     print ("Inserting tags ", end="")
     print (tag_list)
-        
-#    people_list = _process_tag_list (input ("Please input notable creators, comma separated: "))
-#    _report_new_people (people_list)
-        
+    
+    imdbcon = sqlite3.connect ('imdb/tvshow.db')
+    imdbcur = imdbcon.cursor ()
+    imdbcur.execute ("SELECT show_name, episode_name, year FROM episode_names "
+                     "WHERE show_name = ? AND season = ? AND episode = ?;",
+                     (show_name, season_num, episode_num))
+    movie_list = imdbcur.fetchall ()
+    # We need to deal with this all more elegantly, find some nonmanual solution for loading
+    # non-IMDB data
+    if len (movie_list) == 1:
+        print ('Is "{}" ({}), season {}, episode {} named "{}" correct?'
+               ''.format (movie_list [0], movie_list[2], season_num, episode_num, movie_list [1]))
+        is_correct = _yn_to_bool (input ("Is this a full season? (Y/N): "))
+        if not (is_correct):
+            return
+        episode_name = movie_list [1]
+    elif len (movie_list) == 0:
+        print ("Movie not found in movies.db")
+        return
+    else:
+        print ("Impossible data returned; bad database.")
+        print (movie_list)
+        return;
+      
     hs_str = input ("Have you seen this episode or season? (Y/N): ")
     have_watched = _yn_to_bool (hs_str)
 
-    if is_full_season:
-        sort_episode_name = "{:03}".format (season_num);
-    else:
-        sort_episode_name = mangle_name_for_sort (episode_name)
-    sort_tv_show = mangle_name_for_sort (tv_show)
-    escaped_movie_name = con.escape ('"' + tv_show + '": ' + episode_name)
+    sort_episode_name = mangle_name_for_sort (episode_name)
+    sort_tv_show = mangle_name_for_sort (show_name)
+    escaped_movie_name = con.escape ('"' + show_name + '": ' + episode_name)
     escaped_sort_name = con.escape ('"' + sort_tv_show + '": ' + sort_episode_name)
 
     print (sort_episode_name, sort_tv_show, escaped_movie_name, escaped_sort_name)
@@ -438,14 +459,26 @@ def input_one_show (dvd_id):
     for tag in set(tag_list):
         cur.execute ("INSERT INTO tags (movie_id, tag) "
                      "VALUES ({}, {});".format (movie_id, con.escape (tag)))
-#    insert_people (movie_id, people_list)
 
     cur.execute ("INSERT INTO dvd_contents (dvd_id, movie_id) "
                  "VALUES ({}, {});".format (dvd_id, movie_id))
     cur.execute ("INSERT INTO has_been_retagged VALUES ({});".format (movie_id));
-    print (movie_id, tv_show, is_full_season, season_num)
-    cur.execute ("INSERT INTO tv_show (movie_id, name, is_season, season_num) "
-                 "VALUES ({}, {}, {}, {});".format (movie_id, con.escape (tv_show), is_full_season, season_num))
+    print (movie_id, show_name, season_num, episode_num)
+    cur.execute ("INSERT INTO tv_show (movie_id, show_name, episode_name, season_num, episode_num) "
+                 "VALUES ({}, {}, {}, {});".format (movie_id, con.escape (show_name), con.escape (episode_name), season_num, episode_num))
+    
+    imdbcur.execute ("SELECT actor FROM episode_actors where show_name = ? AND season = ? AND episode = ?;",
+                     (show_name, season_num, episode_num))
+    actor_list = imdbcur.fetchall ()
+    for i in actor_list:
+        cur.execute ("INSERT INTO actor VALUES ({}, {});"
+                     "".format (con.escape(i[0]), movie_id))
+    imdbcur.execute ("SELECT director FROM episode_directors where show_name = ? AND season = ? AND episode = ?;",
+                     (show_name, season_num, episode_num))    
+    dir_list = imdbcur.fetchall ()
+    for i in dir_list:
+        cur.execute ("INSERT INTO director VALUES ({}, {});"
+                     "".format (con.escape(i[0]), movie_id))
     return movie_id;
 
 def close_dvd (dvd_id):
