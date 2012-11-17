@@ -54,7 +54,7 @@ def create_table_m2m (table_num):
         elif table_num == 5:
             #The full length only version of the above
             cur.execute ('INSERT INTO small_dvd_movies '
-                         'SELECT DISTINCT movie_id FROM dvd d '
+                         'SELECT DISTINCT m.movie_id FROM dvd d '
                          'INNER JOIN dvd_contents dc ON dc.dvd_id = d.dvd_id '
                          'INNER JOIN movie m ON dc.movie_id = m.movie_id AND m.is_full_length '
                          'WHERE d.dvd_id NOT IN '
