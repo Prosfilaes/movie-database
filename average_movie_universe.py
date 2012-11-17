@@ -149,6 +149,7 @@ try:
                  "".format(table_num))
     print ("The {} list following is about the relations of {} movies."
            "".format (cur.fetchone()[0], num_movies))
+    sys.stdout.flush()
     bacon_list = [(root_id, average_bacon_num (movie_tree, num_movies))]
     global_movie_set.remove (root_id)
     zero_count = 0
