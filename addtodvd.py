@@ -13,11 +13,12 @@ try:
             dvd_id = int (dvd_id_string)
     moviedb.display_dvd (dvd_id)
 #    moviedb.preload_movie_values ()
-#    movie_id = -1
-#    while not movie_id == None:
-    movie_id = moviedb.input_one_movie (dvd_id)
-    moviedb.display_movie (movie_id)
-#    moviedb.close_dvd (dvd_id)
+    while True:
+        movie_id = moviedb.input_one_movie (dvd_id)
+        if movie_id == None:
+            break
+        moviedb.display_movie (movie_id)
+        moviedb.commit ()
     moviedb.close_database ()
 except mdb.Error as e:
     print (e)
