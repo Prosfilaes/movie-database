@@ -18,7 +18,7 @@ try:
         if movie_id == None:
             break
         moviedb.display_movie (movie_id)
-        moviedb.commit ()
+        moviedb.commit_data ()
     moviedb.close_database ()
 except mdb.Error as e:
     print (e)
