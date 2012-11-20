@@ -251,7 +251,7 @@ def input_one_dvd_movie ():
     return dvd_id;
 
 def input_one_movie (dvd_id):
-    movie_name = input ("Name of the movie, or hit enter to exit: ")
+    movie_name = input ("Name of the movie, or hit enter to exit: ").strip()
     if movie_name == "":
         return;
     escaped_movie_name = con.escape (movie_name)

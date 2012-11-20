@@ -12,7 +12,7 @@ try:
         if str.isdigit (dvd_id_string):
             dvd_id = int (dvd_id_string)
     moviedb.display_dvd (dvd_id)
-#    moviedb.preload_movie_values ()
+    moviedb.preload_movie_values ()
     while True:
         movie_id = moviedb.input_one_movie (dvd_id)
         if movie_id == None:
