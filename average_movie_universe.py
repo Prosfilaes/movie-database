@@ -111,6 +111,7 @@ def create_table_m2m (table_num):
         assert True, "table_nums above 8 are unknown"
     cur.execute ("SELECT * FROM m2m;")
     m2m = cur.fetchall ()
+    # make this a list s.t. m2m_dict[i] = None or set()? Would that speed it up?
     m2m_dict = dict () 
     for i in m2m:
         if i[0] not in m2m_dict:
