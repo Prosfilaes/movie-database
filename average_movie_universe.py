@@ -6,29 +6,25 @@ import sys
 import readline
 import time
 
-def calculate_movie_data (movie_id):
-    movie_tree = [set((movie_id,))]
-    movie_set = set ((movie_id,))
+def average_bacon_num (m2m, movie_id, num_movies):
+    movie_set = set ((movie_id, ))
+    last_layer = set ((movie_id, ))
+    new_layer = set ()
+    movie_distance = [1]
     i = 0
-    while (len (movie_tree[i]) > 0):
-        i += 1;
-        movie_tree.append (set ())
-        for movie in movie_tree[i - 1]:
-            cur.execute ("SELECT DISTINCT m2m.movie_id2 from m2m "
-                         "WHERE m2m.movie_id1 = {};"
-                         "".format (con.escape (movie)));       
-            newbies = cur.fetchall ()
-            for newb in newbies:
-                if newb[0] not in movie_set:
-                    movie_set.add (newb [0])
-                    movie_tree [i].add (newb[0])   
-    return (movie_set, movie_tree)
-
-def average_bacon_num (movie_tree, total_number_of_movies):
+    while (movie_distance [i] > 0):
+        i += 1
+        for movie in last_layer:
+            new_layer = new_layer.union (m2m [movie])
+        new_layer = new_layer - movie_set
+        movie_distance.append (len(new_layer))
+        movie_set = movie_set.union (new_layer)
+        last_layer = new_layer
+        new_layer = set ()
     total_bacon = 0
-    for j in range (len (movie_tree)):
-        total_bacon += j * len(movie_tree [j])
-    return total_bacon / total_number_of_movies 
+    for j in range (len (movie_distance)):
+        total_bacon += j * movie_distance [j]
+    return total_bacon / num_movies
 
 def create_table_m2m (table_num):
     cur.execute ("CREATE TEMPORARY TABLE m2m "
@@ -113,8 +109,32 @@ def create_table_m2m (table_num):
                      "WHERE m1.have_watched AND m1.is_full_length;")
     else:
         assert True, "table_nums above 8 are unknown"
-    return
+    cur.execute ("SELECT * FROM m2m;")
+    m2m = cur.fetchall ()
+    m2m_dict = dict () 
+    for i in m2m:
+        if i[0] not in m2m_dict:
+            m2m_dict[i[0]] = set ()    
+        m2m_dict[i[0]].add (i[1])
+        if i[1] not in m2m_dict:
+            m2m_dict[i[1]] = set ()
+        m2m_dict[i[1]].add (i[0])
+    cur.execute ("DROP TABLE m2m;")
+    return m2m_dict
 
+def get_movie_set (m2m_dict, movie_id):
+    mset = set ((movie_id, ))
+    last_set = set ((movie_id, ))
+    new_set = set ()
+    while (True):
+        for i in last_set:
+            new_set = new_set.union (m2m_dict[i])
+        old_len = len(mset)
+        mset = mset.union (new_set)
+        if len (mset) == old_len:
+            return mset
+        last_set = new_set
+    
 try:
     MAX_TABLENUM = 8
     # This is inappropriately intertangled in so many ways.
@@ -133,28 +153,28 @@ try:
     table_num = int(sys.argv[1])
     start_time = time.clock ()
     global con, cur
-    insert = True
+    insert = False
     con = mdb.connect('localhost', 'dvdeug', '', 'DVDs', use_unicode=True, charset="utf8")
     cur = con.cursor()
     cur.execute ("SET NAMES 'utf8'")
-    create_table_m2m (table_num)
+    m2m_dict = create_table_m2m (table_num)
     cur.execute ("SELECT movie_id, bacon_num FROM moviebacon WHERE table_num = {};"
                  "".format(table_num))
     prior_bacon_nums = dict (cur.fetchall ())
     setup_end_time = time.clock ()
     root_id = initial_movie_id[table_num]
-    (global_movie_set, movie_tree) = calculate_movie_data (root_id)
+    global_movie_set = get_movie_set (m2m_dict, root_id)
     num_movies = len (global_movie_set)
     cur.execute ("SELECT description FROM moviebacon_tablenum WHERE table_num = {};"
                  "".format(table_num))
     print ("The {} list following is about the relations of {} movies."
            "".format (cur.fetchone()[0], num_movies))
     sys.stdout.flush()
-    bacon_list = [(root_id, average_bacon_num (movie_tree, num_movies))]
-    global_movie_set.remove (root_id)
-    zero_count = 0
+    bacon_list = []
+    # set to flag value, so it wouldn't skip it in testing
+    zero_count = -1
     for movie in global_movie_set:
-        bacon_list.append ((movie, average_bacon_num (calculate_movie_data (movie)[1], num_movies)))
+        bacon_list.append ((movie, average_bacon_num (m2m_dict, movie, num_movies)))
         if zero_count > -1:
             if bacon_list [-1][0] not in prior_bacon_nums:
                 zero_count = -1
