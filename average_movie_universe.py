@@ -153,7 +153,7 @@ try:
     table_num = int(sys.argv[1])
     start_time = time.clock ()
     global con, cur
-    insert = False
+    insert = True
     con = mdb.connect('localhost', 'dvdeug', '', 'DVDs', use_unicode=True, charset="utf8")
     cur = con.cursor()
     cur.execute ("SET NAMES 'utf8'")
@@ -172,7 +172,7 @@ try:
     sys.stdout.flush()
     bacon_list = []
     # set to flag value, so it wouldn't skip it in testing
-    zero_count = -1
+    zero_count = 0
     for movie in global_movie_set:
         bacon_list.append ((movie, average_bacon_num (m2m_dict, movie, num_movies)))
         if zero_count > -1:
