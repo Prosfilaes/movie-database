@@ -69,17 +69,6 @@ def process_line (line):
         or "(????)" in movie_part or "(scenes deleted)" in movie_part
         or movie_part[0] != '"'):
         return
-    # Split chunks
-#    if 'A' <= movie_part[1] <= 'G':
-#        chunk_val = 1;
-#    elif 'H' <= movie_part[1] <= 'R':
-#        chunk_val = 2;
-#    elif 'S' <= movie_part[1] <= 'Z':
-#        chunk_val = 3;
-#    else:
-#        chunk_val = 4
-#    if chunk_val != chunk_id:
-#        return
     # TV shows 
     # Format "Show" (xxxx) {Episode (#x.y)} ... or
     # Format "Show" (xxxx) {(#x.y)} or
@@ -136,35 +125,17 @@ def process_line (line):
         full_movie = (tv_show, year)    
     return (full_movie, actor)
 
-#def add_tv_show (show):
-#    global show_names, show_actor, show_with_episodes;
-#    # That is, if there is an episode component
-#    if len(show) == 3:
-#        if show[0] in show_with_episodes:
-#            show_with_episodes[show[0]].add (show)
-#        else:
-#            show_with_episodes[show[0]] = set([show])
-#    else:
-#        if show[0] in show_names:
-#            show_names[show[0]].add(show)
-#        else:
-#            show_names[show[0]] = set ([show])
-
 name = ""
-#show_names = dict ()
 show_actor = dict ()
 show_with_episodes = dict ()
 show_director = dict ()
 variants = dict ()
-# chunk_id = 2
 with open ("act_list", "r") as f:
 #    line_num = 0
     for line in f:
         movie_person = process_line (line)
         if movie_person == None:
             continue
-#        print (movie_person[0])
-#        add_tv_show (movie_person[0])
 
         if movie_person[0] in show_actor:
             show_actor[movie_person[0]].add(movie_person[1])
@@ -181,7 +152,6 @@ with open ("directors.list", "r") as f:
         movie_person = process_line (line)
         if movie_person == None:
             continue
-#        add_tv_show (movie_person[0])
 
         if movie_person[0] in show_director:
             show_director[movie_person[0]].add(movie_person[1])
@@ -191,6 +161,7 @@ with open ("directors.list", "r") as f:
 #        if line_num > 10000:
 #            break
 print ("Dumping to SQLite")
+shutil.move ('tv_show.db', 'tv_show.db.bak')
 conn = sqlite3.connect('tv_show.db')
 curr = conn.cursor()
 curr.execute ("CREATE TABLE episode_names (show_name TEXT, year INTEGER, season INTEGER, episode INTEGER, episode_name TEXT, PRIMARY KEY (show_name, year, season, episode));")
@@ -213,7 +184,7 @@ curr.execute ("CREATE TABLE show_no_episode_info (show_name TEXT, year INTEGER, 
 
 for vkey in variants:
     for v in variants[vkey]:
-       curr.execute ("INSERT INTO variants VALUES (?, ?);", (vkey, v[0], v[1]))
+       curr.execute ("INSERT INTO variants VALUES (?, ?, ?);", (vkey, v[0], v[1]))
 conn.commit ()
 shutil.copy ('tv_show.db', 'tv_show.db_1')
 
@@ -231,12 +202,11 @@ for show in show_actor:
         # Show has no season information; drop on floor and note that we did so
         # hopefully nothing dropped was important
         elif len (show) == 3 and show[2][1] == '':
-            curr.execute ("INSERT INTO show_no_episode_info VALUES (?, ?);", (show[0], show[1]))
+            curr.execute ("INSERT OR IGNORE INTO show_no_episode_info VALUES (?, ?);", (show[0], show[1]))
         elif len (show) == 3: # has episode information
             # I hate to use IGNORE here, but there can be multiple epsiodes with the same season/episode and different names
             # I hate this data.
-            # I think we still need IGNORE here, but I'd like to try it without
-            curr.execute ("INSERT episode_actors VALUES (?, ?, ?, ?);", (show[0], show[1], show[2][1], show[2][2], actor))
+            curr.execute ("INSERT OR IGNORE INTO episode_actors VALUES (?, ?, ?, ?, ?);", (show[0], show[1], show[2][1], show[2][2], actor))
         else:
             print ("ERROR: {} is a malformed key in show_actor.".format (show))
             sys.exit ()
@@ -247,7 +217,7 @@ for show in show_director:
     for director in show_director[show]:
         # if it doesn't have epsiode information or that information isn't labled by season (episode number ?!?)
         if len (show) == 2: # doesn't have episode information
-            curr.execute ("INSERT INTO simple_show_directors VALUES (?, ?);", (show[0], show[1], director));
+            curr.execute ("INSERT INTO simple_show_directors VALUES (?, ?, ?);", (show[0], show[1], director));
         # Show has no season information; drop on floor and note that we did so
         # hopefully nothing dropped was important
         # IGNORE here because it was probably already entered in in the actor data
