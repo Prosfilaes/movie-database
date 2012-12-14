@@ -5,6 +5,7 @@ import pymysql as mdb
 import sys
 import readline
 import sqlite3
+import builtins
 
 def _parse_year (s):
     '''Parse a four digit year from 1878 to 2020'''
@@ -58,7 +59,7 @@ tv_show = None
 def open ():
     '''Open the database connection'''
     global con, cur
-    with open ("password", "r") as pass_file:
+    with builtins.open ("password", "r") as pass_file:
         l = pass_file.readline().split()
         username = l[0]
         password = l[1]
