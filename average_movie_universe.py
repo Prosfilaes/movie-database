@@ -120,7 +120,6 @@ def create_table_m2m (table_num):
         if i[1] not in m2m_dict:
             m2m_dict[i[1]] = set ()
         m2m_dict[i[1]].add (i[0])
-    cur.execute ("DROP TABLE m2m;")
     return m2m_dict
 
 def get_movie_set (m2m_dict, movie_id):
@@ -155,7 +154,11 @@ try:
     start_time = time.clock ()
     global con, cur
     insert = True
-    con = mdb.connect('localhost', 'dvdeug', '', 'DVDs', use_unicode=True, charset="utf8")
+    with open ("password", "r") as pass_file:
+        l = pass_file.readline().split()
+        username = l[0]
+        password = l[1]
+    con = mdb.connect('localhost', username, password, 'DVDs', use_unicode=True, charset="utf8")
     cur = con.cursor()
     cur.execute ("SET NAMES 'utf8'")
     m2m_dict = create_table_m2m (table_num)
@@ -168,11 +171,12 @@ try:
     num_movies = len (global_movie_set)
     cur.execute ("SELECT description FROM moviebacon_tablenum WHERE table_num = {};"
                  "".format(table_num))
+    table_name = cur.fetchone()[0]
+    con.rollback () # Close transaction
     print ("The {} list following is about the relations of {} movies."
-           "".format (cur.fetchone()[0], num_movies))
+           "".format (table_name, num_movies))
     sys.stdout.flush()
     bacon_list = []
-    # set to flag value, so it wouldn't skip it in testing
     zero_count = 0
     for movie in global_movie_set:
         bacon_list.append ((movie, average_bacon_num (m2m_dict, movie, num_movies)))

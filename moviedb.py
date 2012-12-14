@@ -58,7 +58,11 @@ tv_show = None
 def open ():
     '''Open the database connection'''
     global con, cur
-    con = mdb.connect('localhost', 'dvdeug', '', 'DVDs', use_unicode=True, charset="utf8")
+    with open ("password", "r") as pass_file:
+        l = pass_file.readline().split()
+        username = l[0]
+        password = l[1]
+    con = mdb.connect('localhost', username, password, 'DVDs', use_unicode=True, charset="utf8")
     cur = con.cursor()
     cur.execute ("SET NAMES 'utf8'")
 

@@ -35,7 +35,11 @@ tv_show = None
 def open_database ():
     '''Open the database connection'''
     global con, cur
-    con = mdb.connect('localhost', 'dvdeug', '', 'DVDs', use_unicode=True, charset="utf8")
+    with open ("password", "r") as pass_file:
+        l = pass_file.readline().split()
+        username = l[0]
+        password = l[1]
+    con = mdb.connect('localhost', username, password, 'DVDs', use_unicode=True, charset="utf8")
     cur = con.cursor()
     cur.execute ("SET NAMES 'utf8'")
 
@@ -50,11 +54,11 @@ def abort_database ():
 
 try:
     digraph = False
-    year = 1930
+    year = 2000
     open_database ()
     cur.execute ("SELECT movie_id FROM movie "
                  "NATURAL JOIN moviebacon "
-                 "WHERE year < {};".format(year))
+                 "WHERE year > {} AND is_full_length;".format(year))
     s = cur.fetchall ()
     id_list = set([t[0] for t in s])
     if digraph:
@@ -77,8 +81,9 @@ try:
                      "INNER JOIN movie m ON a.movie_id = m.movie_id "
                      "INNER JOIN actor a2 ON a.person = a2.person "
                      "INNER JOIN movie m2 ON a2.movie_id = m2.movie_id "
-                     "  AND m2.year < {} "
+                     "  AND m2.year > {} "
                      "  AND (m.year < m2.year OR (m.year = m2.year AND m.movie_id < m2.movie_id)) "
+                     "  AND m2.is_full_length "
                      "WHERE a.movie_id = {};".format (year, i))
         ids = set([t[0] for t in cur.fetchall ()])
         for i2 in ids:
