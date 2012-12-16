@@ -125,41 +125,57 @@ def process_line (line):
         full_movie = (tv_show, year)    
     return (full_movie, actor)
 
+def add_tv_show (show):
+    global show_names, show_actor, show_with_episodes;
+    # That is, if there is an episode component
+    if len(show) == 3:
+        if show[0] in show_with_episodes:
+            show_with_episodes[show[0]].add (show)
+        else:
+            show_with_episodes[show[0]] = set([show])
+    else:
+        if show[0] in show_names:
+            show_names[show[0]].add(show)
+        else:
+            show_names[show[0]] = set ([show])
+
 name = ""
 show_actor = dict ()
 show_with_episodes = dict ()
 show_director = dict ()
 variants = dict ()
 with open ("act_list", "r") as f:
-#    line_num = 0
+    line_num = 0
     for line in f:
         movie_person = process_line (line)
         if movie_person == None:
             continue
-
+        add_tv_show (movie_person[0])
         if movie_person[0] in show_actor:
             show_actor[movie_person[0]].add(movie_person[1])
         else:
             show_actor[movie_person[0]] = set([movie_person[1]])
-#        line_num += 1
-#        if line_num > 10000:
-#            break
+        line_num += 1
+        if line_num > 10000:
+            break
 # load in directors
 name = ""
 with open ("directors.list", "r") as f:
-#    line_num = 0
+    line_num = 0
     for line in f:
         movie_person = process_line (line)
         if movie_person == None:
             continue
-
+        add_tv_show (movie_person[0])
         if movie_person[0] in show_director:
             show_director[movie_person[0]].add(movie_person[1])
         else:
             show_director[movie_person[0]] = set([movie_person[1]])
-#        line_num += 1
-#        if line_num > 10000:
-#            break
+        line_num += 1
+        if line_num > 10000:
+            break
+print (show_with_episodes)
+sys.exit ()
 print ("Dumping to SQLite")
 shutil.move ('tv_show.db', 'tv_show.db.bak')
 conn = sqlite3.connect('tv_show.db')
