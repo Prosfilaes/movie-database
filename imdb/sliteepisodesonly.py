@@ -145,7 +145,7 @@ show_with_episodes = dict ()
 show_director = dict ()
 variants = dict ()
 with open ("act_list", "r") as f:
-    line_num = 0
+#    line_num = 0
     for line in f:
         movie_person = process_line (line)
         if movie_person == None:
@@ -155,9 +155,9 @@ with open ("act_list", "r") as f:
             show_actor[movie_person[0]].add(movie_person[1])
         else:
             show_actor[movie_person[0]] = set([movie_person[1]])
-        line_num += 1
-        if line_num > 10000:
-            break
+#        line_num += 1
+#        if line_num > 10000:
+#            break
 # load in directors
 name = ""
 with open ("directors.list", "r") as f:
@@ -171,9 +171,9 @@ with open ("directors.list", "r") as f:
             show_director[movie_person[0]].add(movie_person[1])
         else:
             show_director[movie_person[0]] = set([movie_person[1]])
-        line_num += 1
-        if line_num > 10000:
-            break
+#        line_num += 1
+#        if line_num > 10000:
+#            break
 print (show_with_episodes)
 sys.exit ()
 print ("Dumping to SQLite")
