@@ -33,7 +33,8 @@ def parse_year_version (year_version):
 
 def parse_episode (episode):
     # Episode (#x.y) or just (#x.y)
-    episode_match = re.match (r"(.*) \(#([0-9])*\.([0-9]*)\)", episode)
+    # Also Episode (#xx.y) or just (#xx.y)
+    episode_match = re.match (r"(.*) \(#([0-9]*)\.([0-9]*)\)", episode)
     if episode_match:
         return (episode_match.group(1).strip(), episode_match.group(2), episode_match.group(3))
     else:
@@ -126,18 +127,13 @@ def process_line (line):
     return (full_movie, actor)
 
 def add_tv_show (show):
-    global show_names, show_actor, show_with_episodes;
+    global show_actor, show_with_episodes;
     # That is, if there is an episode component
     if len(show) == 3:
         if show[0] in show_with_episodes:
             show_with_episodes[show[0]].add (show)
         else:
             show_with_episodes[show[0]] = set([show])
-    else:
-        if show[0] in show_names:
-            show_names[show[0]].add(show)
-        else:
-            show_names[show[0]] = set ([show])
 
 name = ""
 show_actor = dict ()
@@ -206,6 +202,11 @@ shutil.copy ('tv_show.db', 'tv_show.db_1')
 
 for show in show_with_episodes:
     for swe in show_with_episodes [show]:
+        try:
+            curr.execute ("INSERT INTO episode_names VALUES (?, ?, ?, ?, ?);",
+                          (swe[0], swe[1], swe[2][1], swe[2][2], swe[2][0]))
+        except sqlite3.IntegrityError:
+            print ("Rejected entry from show_with_episodes: ", swe)
         curr.execute ("INSERT INTO episode_names VALUES (?, ?, ?, ?, ?);", (swe[0], swe[1], swe[2][1], swe[2][2], swe[2][0]))
 conn.commit ()
 shutil.copy ('tv_show.db', 'tv_show.db_2')
@@ -218,11 +219,17 @@ for show in show_actor:
         # Show has no season information; drop on floor and note that we did so
         # hopefully nothing dropped was important
         elif len (show) == 3 and show[2][1] == '':
-            curr.execute ("INSERT OR IGNORE INTO show_no_episode_info VALUES (?, ?);", (show[0], show[1]))
+            try:
+                curr.execute ("INSERT INTO show_no_episode_info VALUES (?, ?);", (show[0], show[1]))
+            except sqlite3.IntegrityError:
+                print ("Rejected entry from show_actor for show_no_episode_info: ", show)
         elif len (show) == 3: # has episode information
             # I hate to use IGNORE here, but there can be multiple epsiodes with the same season/episode and different names
             # I hate this data.
-            curr.execute ("INSERT OR IGNORE INTO episode_actors VALUES (?, ?, ?, ?, ?);", (show[0], show[1], show[2][1], show[2][2], actor))
+            try:
+                curr.execute ("INSERT INTO episode_actors VALUES (?, ?, ?, ?, ?);", (show[0], show[1], show[2][1], show[2][2], actor))
+            except sqlite3.IntegrityError:
+                print ("Rejected entry from show_actor for episode_actors: ", show)
         else:
             print ("ERROR: {} is a malformed key in show_actor.".format (show))
             sys.exit ()
@@ -242,7 +249,10 @@ for show in show_director:
         elif len (show) == 3: # has episode information
             # I hate to use IGNORE here, but there can be multiple epsiodes with the same season/episode and different names
             # I hate this data.
-            curr.execute ("INSERT OR IGNORE INTO episode_directors VALUES (?, ?, ?, ?, ?);", (show[0], show[1], show[2][1], show[2][2], director))
+            try:
+                curr.execute ("INSERT INTO episode_directors VALUES (?, ?, ?, ?, ?);", (show[0], show[1], show[2][1], show[2][2], director))
+            except sqlite3.IntegrityError:
+                print ("Rejected entry from show_director for episode_directors: ", show)            
         else:
             print ("ERROR: {} is a malformed key in show_director.".format (show))
             sys.exit ()
@@ -252,9 +262,4 @@ shutil.copy ('tv_show.db', 'tv_show.db_4')
 conn.commit ()
 curr.close ()
 
-#with gzip.open ("show_pickle{}.gz".format(chunk_id), "wb") as f_out:
-#    pickle.dump (show_names, f_out)
-#    pickle.dump (show_with_episodes, f_out)
-#    pickle.dump (show_actor, f_out)
-#    pickle.dump (show_director, f_out)
 
