@@ -170,8 +170,6 @@ with open ("directors.list", "r") as f:
 #        line_num += 1
 #        if line_num > 10000:
 #            break
-print (show_with_episodes)
-sys.exit ()
 print ("Dumping to SQLite")
 shutil.move ('tv_show.db', 'tv_show.db.bak')
 conn = sqlite3.connect('tv_show.db')
