@@ -1,6 +1,6 @@
 #!/bin/bash
 q=`mdate | cut -c6-12`
-mysqldump DVDs --user dvdeug --password > dbbackup.$q
+mysqldump DVDs --user prosfilaes --password > dbbackup.$q
 ./average_movie_universe.py 8 > averagewscififl.$q # more of a test
 ./average_movie_universe.py 6 > averagewfluniverse.$q
 ./average_movie_universe.py 3 > averagewatcheduniverse.$q

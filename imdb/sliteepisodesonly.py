@@ -205,7 +205,6 @@ for show in show_with_episodes:
                           (swe[0], swe[1], swe[2][1], swe[2][2], swe[2][0]))
         except sqlite3.IntegrityError:
             print ("Rejected entry from show_with_episodes: ", swe)
-        curr.execute ("INSERT INTO episode_names VALUES (?, ?, ?, ?, ?);", (swe[0], swe[1], swe[2][1], swe[2][2], swe[2][0]))
 conn.commit ()
 shutil.copy ('tv_show.db', 'tv_show.db_2')
 

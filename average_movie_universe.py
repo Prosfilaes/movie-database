@@ -142,7 +142,7 @@ try:
     # instead of storing a value known to be in the largest subset.
     # That's more work, both coding and computational, and speed
     # matters for this code.
-    initial_movie_id = [None, 376, 376, 376, 376, 376, 376, 4584, 51]
+    initial_movie_id = [None, 376, 376, 376, 376, 376, 376, 4169, 51]
     if (len(sys.argv) != 2 or int(sys.argv[1]) < 1 or
         int(sys.argv[1]) > MAX_TABLENUM):
         
