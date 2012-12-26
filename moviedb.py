@@ -591,7 +591,7 @@ def input_one_tv_season (dvd_id):
         for i in dir_list:
             cur.execute ("INSERT INTO director VALUES ({}, {});"
                          "".format (con.escape(i[0]), movie_id))
-    cur.execute ("INSERT INTO complete_seasons VALUES ({}, {});"
+    cur.execute ("INSERT INTO complete_seasons VALUES ({}, {}, 0);"
                  "".format (con.escape (show_name), season_num));
     imdbcon.rollback ()
     imdbcon.close ()
