@@ -154,6 +154,7 @@ try:
     start_time = time.clock ()
     global con, cur
     insert = True
+    shortcut = True
     with open ("password", "r") as pass_file:
         l = pass_file.readline().split()
         username = l[0]
@@ -177,7 +178,10 @@ try:
            "".format (table_name, num_movies))
     sys.stdout.flush()
     bacon_list = []
-    zero_count = 0
+    if shortcut:
+        zero_count = 0
+    else:
+        zero_count = -1
     for movie in global_movie_set:
         bacon_list.append ((movie, average_bacon_num (m2m_dict, movie, num_movies)))
         if zero_count > -1:
@@ -217,6 +221,9 @@ try:
            "".format (setup_end_time - start_time, data_collection_time - setup_end_time,
                       (data_collection_time - setup_end_time) / num_movies,
                       final_time - start_time))
+    print ("Prior Bacon nums: {:.2f} sum, {:.2f} avg; current Bacon nums: {:.2f} sum, {:.2f} avg"
+           "".format (sum (prior_bacon_nums.values()), sum(prior_bacon_nums.values()) / len (prior_bacon_nums.values()),
+                      sum ([x[1] for x in bacon_list]), sum ([x[1] for x in bacon_list]) / len (bacon_list)))
 except mdb.Error as e:
     print (e)
     con.rollback ()
