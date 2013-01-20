@@ -66,6 +66,7 @@ def open ():
     con = mdb.connect('localhost', username, password, 'DVDs', use_unicode=True, charset="utf8")
     cur = con.cursor()
     cur.execute ("SET NAMES 'utf8'")
+    return (con, cur)
 
 def new_dvd ():
     '''Create a new dvd in the system, returning the dvd_id'''
@@ -352,6 +353,11 @@ def input_one_movie (dvd_id):
         cur.execute ("INSERT INTO has_been_retagged VALUES ({});".format (movie_id));
     return movie_id;
 
+def add_people (movie_id):
+    cur.execute ("SELECT name, year FROM movie WHERE movie_id = {};".format(movie_id));
+    (movie_name, movie_year) = cur.fetchone ()
+    insert_people (movie_id, movie_name, movie_year)
+
 ordinal = ["Zeroth", "First", "Second", "Third", "Fourth", 
            "Fifth", "Sixth", "Seventh", "Eighth", "Ninth",
            "Tenth", "Eleventh", "Twelfth", "Thirteenth", "Fourteenth", "Fifteenth", 
@@ -364,7 +370,7 @@ def cur_execute (s):
 def input_one_show (dvd_id):
     print ()
     show_name = input ("What's the name of the show? ")
-    if show_name == None:
+    if show_name == '':
         return
     season_num = 0
     while season_num == 0:
