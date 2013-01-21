@@ -221,7 +221,7 @@ try:
            "".format (setup_end_time - start_time, data_collection_time - setup_end_time,
                       (data_collection_time - setup_end_time) / num_movies,
                       final_time - start_time))
-    print ("Prior Bacon nums: {:.2f} sum, {:.2f} avg; current Bacon nums: {:.2f} sum, {:.2f} avg"
+    print ("Prior Bacon nums: {:.2f} sum, {:.6f} avg; current Bacon nums: {:.2f} sum, {:.6f} avg"
            "".format (sum (prior_bacon_nums.values()), sum(prior_bacon_nums.values()) / len (prior_bacon_nums.values()),
                       sum ([x[1] for x in bacon_list]), sum ([x[1] for x in bacon_list]) / len (bacon_list)))
 except mdb.Error as e:
