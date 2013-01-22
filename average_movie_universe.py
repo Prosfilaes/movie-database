@@ -217,6 +217,7 @@ try:
     else:
         con.rollback ()
     final_time = time.clock ()
+    print ()
     print ("Setup: {:.2f}s; travelling time: {:.2f}s; per movie: {:.4f}s; total: {:.2f}s"
            "".format (setup_end_time - start_time, data_collection_time - setup_end_time,
                       (data_collection_time - setup_end_time) / num_movies,
