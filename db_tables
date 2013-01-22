@@ -1,0 +1,631 @@
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+DROP TABLE IF EXISTS `actor`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `actor` (
+  `person` varchar(180) NOT NULL,
+  `movie_id` smallint(5) unsigned NOT NULL,
+  PRIMARY KEY (`person`,`movie_id`),
+  KEY `movie_id` (`movie_id`),
+  CONSTRAINT `actor_ibfk_1` FOREIGN KEY (`movie_id`) REFERENCES `movie` (`movie_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `actorbacon`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `actorbacon` (
+  `table_num` smallint(5) NOT NULL,
+  `person` varchar(180) NOT NULL,
+  `bacon_num` double NOT NULL,
+  PRIMARY KEY (`table_num`,`person`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `actors_imported`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `actors_imported` (
+  `movie_id` smallint(5) unsigned NOT NULL,
+  PRIMARY KEY (`movie_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `alternate_movie_names`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `alternate_movie_names` (
+  `movie_id` smallint(5) unsigned NOT NULL,
+  `name` varchar(180) NOT NULL,
+  PRIMARY KEY (`movie_id`,`name`),
+  CONSTRAINT `alternate_movie_names_ibfk_1` FOREIGN KEY (`movie_id`) REFERENCES `movie` (`movie_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `author`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `author` (
+  `movie_id` smallint(5) unsigned NOT NULL,
+  `name` varchar(180) NOT NULL,
+  PRIMARY KEY (`movie_id`,`name`),
+  CONSTRAINT `author_ibfk_1` FOREIGN KEY (`movie_id`) REFERENCES `movie` (`movie_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `bacon`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `bacon` (
+  `table_num` smallint(5) NOT NULL,
+  `person_id` int(10) unsigned NOT NULL,
+  `bacon_num` double NOT NULL,
+  PRIMARY KEY (`table_num`,`person_id`),
+  KEY `person_id` (`person_id`),
+  CONSTRAINT `bacon_ibfk_1` FOREIGN KEY (`person_id`) REFERENCES `person_name` (`person_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `bacon_tablenum`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `bacon_tablenum` (
+  `table_num` smallint(5) DEFAULT NULL,
+  `description` varchar(15) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `complete_seasons`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `complete_seasons` (
+  `show_name` varchar(127) NOT NULL,
+  `season_num` smallint(5) unsigned NOT NULL,
+  `year_fixed` tinyint(1) DEFAULT NULL,
+  PRIMARY KEY (`show_name`,`season_num`),
+  CONSTRAINT `complete_seasons_ibfk_1` FOREIGN KEY (`show_name`, `season_num`) REFERENCES `tv_show` (`show_name`, `season_num`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `dc_dvd`;
+/*!50001 DROP VIEW IF EXISTS `dc_dvd`*/;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+/*!50001 CREATE TABLE `dc_dvd` (
+  `movie_id` tinyint NOT NULL,
+  `dvd_id` tinyint NOT NULL,
+  `dvd_name` tinyint NOT NULL
+) ENGINE=MyISAM */;
+SET character_set_client = @saved_cs_client;
+DROP TABLE IF EXISTS `director`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `director` (
+  `person` varchar(180) NOT NULL,
+  `movie_id` smallint(5) unsigned NOT NULL,
+  PRIMARY KEY (`person`,`movie_id`),
+  KEY `movie_id` (`movie_id`),
+  CONSTRAINT `director_ibfk_1` FOREIGN KEY (`movie_id`) REFERENCES `movie` (`movie_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `dvd`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dvd` (
+  `dvd_id` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(180) NOT NULL,
+  PRIMARY KEY (`dvd_id`),
+  UNIQUE KEY `uniq_title` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=958 DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `dvd_contents`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dvd_contents` (
+  `dvd_id` smallint(5) unsigned NOT NULL DEFAULT '0',
+  `movie_id` smallint(5) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`dvd_id`,`movie_id`),
+  KEY `dvd_id` (`dvd_id`),
+  KEY `movie_id` (`movie_id`),
+  CONSTRAINT `dvd_id` FOREIGN KEY (`dvd_id`) REFERENCES `dvd` (`dvd_id`),
+  CONSTRAINT `movie_id` FOREIGN KEY (`movie_id`) REFERENCES `movie` (`movie_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `dvd_tags`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dvd_tags` (
+  `dvd_id` smallint(5) unsigned NOT NULL,
+  `tag` varchar(63) NOT NULL,
+  PRIMARY KEY (`dvd_id`,`tag`),
+  CONSTRAINT `fk_dvd_id` FOREIGN KEY (`dvd_id`) REFERENCES `dvd` (`dvd_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `dvds_without_movies`;
+/*!50001 DROP VIEW IF EXISTS `dvds_without_movies`*/;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+/*!50001 CREATE TABLE `dvds_without_movies` (
+  `dvd_id` tinyint NOT NULL,
+  `name` tinyint NOT NULL
+) ENGINE=MyISAM */;
+SET character_set_client = @saved_cs_client;
+DROP TABLE IF EXISTS `film`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `film` (
+  `movie_id` smallint(5) unsigned NOT NULL,
+  `imdb_name` varchar(180) DEFAULT NULL,
+  PRIMARY KEY (`movie_id`),
+  CONSTRAINT `film_ibfk_1` FOREIGN KEY (`movie_id`) REFERENCES `movie` (`movie_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `has_been_retagged`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `has_been_retagged` (
+  `movie_id` smallint(6) NOT NULL,
+  PRIMARY KEY (`movie_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `individualized_shows`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `individualized_shows` (
+  `movie_id` smallint(5) unsigned NOT NULL,
+  PRIMARY KEY (`movie_id`),
+  CONSTRAINT `individualized_shows_ibfk_1` FOREIGN KEY (`movie_id`) REFERENCES `movie` (`movie_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `movie`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `movie` (
+  `movie_id` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(180) NOT NULL,
+  `year` smallint(5) unsigned NOT NULL,
+  `is_full_length` tinyint(1) NOT NULL,
+  `have_watched` tinyint(1) DEFAULT NULL,
+  `sort_name` varchar(180) NOT NULL,
+  PRIMARY KEY (`movie_id`),
+  UNIQUE KEY `uniq_name_year` (`name`,`year`),
+  KEY `idx_movie_sort_name` (`sort_name`)
+) ENGINE=InnoDB AUTO_INCREMENT=6245 DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `movie_names`;
+/*!50001 DROP VIEW IF EXISTS `movie_names`*/;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+/*!50001 CREATE TABLE `movie_names` (
+  `movie_id` tinyint NOT NULL,
+  `name` tinyint NOT NULL,
+  `year` tinyint NOT NULL
+) ENGINE=MyISAM */;
+SET character_set_client = @saved_cs_client;
+DROP TABLE IF EXISTS `movie_old`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `movie_old` (
+  `movie_id` smallint(5) unsigned NOT NULL,
+  `name` varchar(180) NOT NULL,
+  `year` smallint(5) unsigned NOT NULL,
+  `is_full_length` tinyint(1) NOT NULL,
+  `have_watched` tinyint(1) DEFAULT NULL,
+  `sort_name` varchar(180) NOT NULL,
+  PRIMARY KEY (`movie_id`),
+  UNIQUE KEY `uniq_name_year` (`name`,`year`),
+  KEY `idx_movie_sort_name` (`sort_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `movie_people`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `movie_people` (
+  `movie_id` smallint(5) unsigned NOT NULL,
+  `person_id` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`movie_id`,`person_id`),
+  KEY `movie_id_k` (`movie_id`),
+  KEY `person_id_k` (`person_id`),
+  CONSTRAINT `movie_id_fk` FOREIGN KEY (`movie_id`) REFERENCES `movie` (`movie_id`),
+  CONSTRAINT `person_id_fk` FOREIGN KEY (`person_id`) REFERENCES `person_name` (`person_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `movie_terse`;
+/*!50001 DROP VIEW IF EXISTS `movie_terse`*/;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+/*!50001 CREATE TABLE `movie_terse` (
+  `movie_id` tinyint NOT NULL,
+  `name` tinyint NOT NULL,
+  `year` tinyint NOT NULL,
+  `ifl` tinyint NOT NULL,
+  `hw` tinyint NOT NULL
+) ENGINE=MyISAM */;
+SET character_set_client = @saved_cs_client;
+DROP TABLE IF EXISTS `movie_with_bacon`;
+/*!50001 DROP VIEW IF EXISTS `movie_with_bacon`*/;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+/*!50001 CREATE TABLE `movie_with_bacon` (
+  `movie_id` tinyint NOT NULL,
+  `name` tinyint NOT NULL,
+  `year` tinyint NOT NULL,
+  `have_watched` tinyint NOT NULL,
+  `mb` tinyint NOT NULL,
+  `mbs` tinyint NOT NULL,
+  `mbw` tinyint NOT NULL,
+  `mbfl` tinyint NOT NULL,
+  `mbfs` tinyint NOT NULL,
+  `mbfw` tinyint NOT NULL,
+  `mbtv` tinyint NOT NULL
+) ENGINE=MyISAM */;
+SET character_set_client = @saved_cs_client;
+DROP TABLE IF EXISTS `moviebacon`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `moviebacon` (
+  `table_num` smallint(5) NOT NULL DEFAULT '0',
+  `movie_id` smallint(5) unsigned NOT NULL,
+  `bacon_num` double DEFAULT NULL,
+  PRIMARY KEY (`table_num`,`movie_id`),
+  KEY `movie_id` (`movie_id`),
+  CONSTRAINT `moviebacon_ibfk_1` FOREIGN KEY (`movie_id`) REFERENCES `movie` (`movie_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `moviebacon_tablenum`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `moviebacon_tablenum` (
+  `table_num` smallint(5) DEFAULT NULL,
+  `description` varchar(15) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `movies_by_decade`;
+/*!50001 DROP VIEW IF EXISTS `movies_by_decade`*/;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+/*!50001 CREATE TABLE `movies_by_decade` (
+  `Decade` tinyint NOT NULL,
+  `How many` tinyint NOT NULL
+) ENGINE=MyISAM */;
+SET character_set_client = @saved_cs_client;
+DROP TABLE IF EXISTS `movies_not_on_dvd`;
+/*!50001 DROP VIEW IF EXISTS `movies_not_on_dvd`*/;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+/*!50001 CREATE TABLE `movies_not_on_dvd` (
+  `movie_id` tinyint NOT NULL,
+  `name` tinyint NOT NULL,
+  `year` tinyint NOT NULL,
+  `is_full_length` tinyint NOT NULL,
+  `have_watched` tinyint NOT NULL,
+  `sort_name` tinyint NOT NULL
+) ENGINE=MyISAM */;
+SET character_set_client = @saved_cs_client;
+DROP TABLE IF EXISTS `movies_on_multiple_dvds`;
+/*!50001 DROP VIEW IF EXISTS `movies_on_multiple_dvds`*/;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+/*!50001 CREATE TABLE `movies_on_multiple_dvds` (
+  `movie_id` tinyint NOT NULL,
+  `movie` tinyint NOT NULL,
+  `year` tinyint NOT NULL,
+  `ifl` tinyint NOT NULL,
+  `hw` tinyint NOT NULL,
+  `dvd_id1` tinyint NOT NULL,
+  `dvd1` tinyint NOT NULL,
+  `dvd_id2` tinyint NOT NULL,
+  `dvd2` tinyint NOT NULL
+) ENGINE=MyISAM */;
+SET character_set_client = @saved_cs_client;
+DROP TABLE IF EXISTS `movies_to_drop`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `movies_to_drop` (
+  `movie_id` smallint(5) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`movie_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `notable_actor`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `notable_actor` (
+  `person` varchar(180) NOT NULL,
+  PRIMARY KEY (`person`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `other_stuff`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `other_stuff` (
+  `movie_id` smallint(5) unsigned NOT NULL,
+  `imdb_name` varchar(180) DEFAULT NULL,
+  PRIMARY KEY (`movie_id`),
+  CONSTRAINT `other_stuff_ibfk_1` FOREIGN KEY (`movie_id`) REFERENCES `movie` (`movie_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `person_name`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `person_name` (
+  `person_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `person` varchar(180) NOT NULL,
+  PRIMARY KEY (`person_id`),
+  UNIQUE KEY `uniq_person` (`person`)
+) ENGINE=InnoDB AUTO_INCREMENT=9102 DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `related_movies`;
+/*!50001 DROP VIEW IF EXISTS `related_movies`*/;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+/*!50001 CREATE TABLE `related_movies` (
+  `base_movie_id` tinyint NOT NULL,
+  `person` tinyint NOT NULL,
+  `movie_id` tinyint NOT NULL,
+  `movie` tinyint NOT NULL,
+  `year` tinyint NOT NULL,
+  `w` tinyint NOT NULL,
+  `mb` tinyint NOT NULL,
+  `mbs` tinyint NOT NULL,
+  `mbw` tinyint NOT NULL,
+  `mbfl` tinyint NOT NULL,
+  `mbfw` tinyint NOT NULL
+) ENGINE=MyISAM */;
+SET character_set_client = @saved_cs_client;
+DROP TABLE IF EXISTS `short`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `short` (
+  `movie_id` smallint(5) unsigned NOT NULL,
+  `imdb_name` varchar(180) DEFAULT NULL,
+  PRIMARY KEY (`movie_id`),
+  CONSTRAINT `short_ibfk_1` FOREIGN KEY (`movie_id`) REFERENCES `movie` (`movie_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `static_year`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `static_year` (
+  `year` smallint(5) unsigned NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `tags`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `tags` (
+  `movie_id` smallint(5) unsigned NOT NULL DEFAULT '0',
+  `tag` varchar(63) NOT NULL,
+  PRIMARY KEY (`movie_id`,`tag`),
+  CONSTRAINT `tags_ibfk_1` FOREIGN KEY (`movie_id`) REFERENCES `movie` (`movie_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `tv_show`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `tv_show` (
+  `movie_id` smallint(5) unsigned NOT NULL,
+  `show_name` varchar(127) NOT NULL,
+  `episode_name` varchar(127) NOT NULL,
+  `season_num` smallint(5) unsigned NOT NULL,
+  `episode_num` smallint(5) unsigned NOT NULL,
+  PRIMARY KEY (`movie_id`),
+  UNIQUE KEY `show_name` (`show_name`,`episode_name`),
+  UNIQUE KEY `show_name_2` (`show_name`,`season_num`,`episode_num`),
+  CONSTRAINT `tv_show_ibfk_1` FOREIGN KEY (`movie_id`) REFERENCES `movie` (`movie_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `tv_show_old`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `tv_show_old` (
+  `movie_id` smallint(5) unsigned NOT NULL,
+  `name` varchar(127) NOT NULL,
+  `is_season` tinyint(1) NOT NULL,
+  `season_num` smallint(5) unsigned NOT NULL,
+  PRIMARY KEY (`movie_id`),
+  CONSTRAINT `fk_movie_id` FOREIGN KEY (`movie_id`) REFERENCES `movie` (`movie_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `tv_show_part`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `tv_show_part` (
+  `movie_id` smallint(5) unsigned NOT NULL,
+  `show_name` varchar(127) NOT NULL,
+  `full_epsiode_name` varchar(127) NOT NULL,
+  `episode_name` varchar(127) NOT NULL,
+  `season_num` smallint(5) unsigned NOT NULL,
+  `episode_num` smallint(5) unsigned NOT NULL,
+  `epsiode_part` smallint(5) unsigned NOT NULL,
+  PRIMARY KEY (`movie_id`),
+  UNIQUE KEY `show_name` (`show_name`,`episode_name`),
+  UNIQUE KEY `show_name_2` (`show_name`,`season_num`,`episode_num`,`epsiode_part`),
+  CONSTRAINT `tv_show_part_ibfk_1` FOREIGN KEY (`movie_id`) REFERENCES `movie` (`movie_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `watched_movies_no_watched_bacon`;
+/*!50001 DROP VIEW IF EXISTS `watched_movies_no_watched_bacon`*/;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+/*!50001 CREATE TABLE `watched_movies_no_watched_bacon` (
+  `movie_id` tinyint NOT NULL,
+  `name` tinyint NOT NULL,
+  `year` tinyint NOT NULL,
+  `ifl` tinyint NOT NULL
+) ENGINE=MyISAM */;
+SET character_set_client = @saved_cs_client;
+DROP TABLE IF EXISTS `year_count`;
+/*!50001 DROP VIEW IF EXISTS `year_count`*/;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+/*!50001 CREATE TABLE `year_count` (
+  `year` tinyint NOT NULL,
+  `count` tinyint NOT NULL
+) ENGINE=MyISAM */;
+SET character_set_client = @saved_cs_client;
+/*!50001 DROP TABLE IF EXISTS `dc_dvd`*/;
+/*!50001 DROP VIEW IF EXISTS `dc_dvd`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8 */;
+/*!50001 SET character_set_results     = utf8 */;
+/*!50001 SET collation_connection      = utf8_general_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`prosfilaes`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `dc_dvd` AS select `dvd_contents`.`movie_id` AS `movie_id`,`dvd_contents`.`dvd_id` AS `dvd_id`,`dvd`.`name` AS `dvd_name` from (`dvd_contents` join `dvd` on((`dvd_contents`.`dvd_id` = `dvd`.`dvd_id`))) */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+/*!50001 DROP TABLE IF EXISTS `dvds_without_movies`*/;
+/*!50001 DROP VIEW IF EXISTS `dvds_without_movies`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8 */;
+/*!50001 SET character_set_results     = utf8 */;
+/*!50001 SET collation_connection      = utf8_general_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`prosfilaes`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `dvds_without_movies` AS select `dvd`.`dvd_id` AS `dvd_id`,`dvd`.`name` AS `name` from `dvd` where (not(`dvd`.`dvd_id` in (select `dvd_contents`.`dvd_id` from `dvd_contents`))) */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+/*!50001 DROP TABLE IF EXISTS `movie_names`*/;
+/*!50001 DROP VIEW IF EXISTS `movie_names`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8 */;
+/*!50001 SET character_set_results     = utf8 */;
+/*!50001 SET collation_connection      = utf8_general_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`prosfilaes`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `movie_names` AS select `movie`.`movie_id` AS `movie_id`,`movie`.`name` AS `name`,`movie`.`year` AS `year` from `movie` union select `alternate_movie_names`.`movie_id` AS `movie_id`,`alternate_movie_names`.`name` AS `name`,`movie`.`year` AS `year` from (`alternate_movie_names` join `movie` on((`alternate_movie_names`.`movie_id` = `movie`.`movie_id`))) */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+/*!50001 DROP TABLE IF EXISTS `movie_terse`*/;
+/*!50001 DROP VIEW IF EXISTS `movie_terse`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8 */;
+/*!50001 SET character_set_results     = utf8 */;
+/*!50001 SET collation_connection      = utf8_general_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`prosfilaes`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `movie_terse` AS select `movie`.`movie_id` AS `movie_id`,`movie`.`name` AS `name`,`movie`.`year` AS `year`,`movie`.`is_full_length` AS `ifl`,`movie`.`have_watched` AS `hw` from `movie` */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+/*!50001 DROP TABLE IF EXISTS `movie_with_bacon`*/;
+/*!50001 DROP VIEW IF EXISTS `movie_with_bacon`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8 */;
+/*!50001 SET character_set_results     = utf8 */;
+/*!50001 SET collation_connection      = utf8_general_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`prosfilaes`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `movie_with_bacon` AS select `m`.`movie_id` AS `movie_id`,`m`.`name` AS `name`,`m`.`year` AS `year`,`m`.`have_watched` AS `have_watched`,round(`mb1`.`bacon_num`,4) AS `mb`,round(`mb2`.`bacon_num`,4) AS `mbs`,round(`mb3`.`bacon_num`,4) AS `mbw`,round(`mb4`.`bacon_num`,4) AS `mbfl`,round(`mb5`.`bacon_num`,4) AS `mbfs`,round(`mb6`.`bacon_num`,4) AS `mbfw`,round(`mb7`.`bacon_num`,4) AS `mbtv` from (((((((`movie` `m` left join `moviebacon` `mb1` on(((`m`.`movie_id` = `mb1`.`movie_id`) and (`mb1`.`table_num` = 1)))) left join `moviebacon` `mb2` on(((`m`.`movie_id` = `mb2`.`movie_id`) and (`mb2`.`table_num` = 2)))) left join `moviebacon` `mb3` on(((`m`.`movie_id` = `mb3`.`movie_id`) and (`mb3`.`table_num` = 3)))) left join `moviebacon` `mb4` on(((`m`.`movie_id` = `mb4`.`movie_id`) and (`mb4`.`table_num` = 4)))) left join `moviebacon` `mb5` on(((`m`.`movie_id` = `mb5`.`movie_id`) and (`mb5`.`table_num` = 5)))) left join `moviebacon` `mb6` on(((`m`.`movie_id` = `mb6`.`movie_id`) and (`mb6`.`table_num` = 6)))) left join `moviebacon` `mb7` on(((`m`.`movie_id` = `mb7`.`movie_id`) and (`mb7`.`table_num` = 7)))) */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+/*!50001 DROP TABLE IF EXISTS `movies_by_decade`*/;
+/*!50001 DROP VIEW IF EXISTS `movies_by_decade`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8 */;
+/*!50001 SET character_set_results     = utf8 */;
+/*!50001 SET collation_connection      = utf8_general_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`prosfilaes`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `movies_by_decade` AS select (floor((`movie`.`year` / 10)) * 10) AS `Decade`,count(0) AS `How many` from `movie` where (`movie`.`is_full_length` = 1) group by floor((`movie`.`year` / 10)) */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+/*!50001 DROP TABLE IF EXISTS `movies_not_on_dvd`*/;
+/*!50001 DROP VIEW IF EXISTS `movies_not_on_dvd`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8 */;
+/*!50001 SET character_set_results     = utf8 */;
+/*!50001 SET collation_connection      = utf8_general_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`prosfilaes`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `movies_not_on_dvd` AS select `movie`.`movie_id` AS `movie_id`,`movie`.`name` AS `name`,`movie`.`year` AS `year`,`movie`.`is_full_length` AS `is_full_length`,`movie`.`have_watched` AS `have_watched`,`movie`.`sort_name` AS `sort_name` from `movie` where (not(`movie`.`movie_id` in (select `dvd_contents`.`movie_id` from `dvd_contents`))) */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+/*!50001 DROP TABLE IF EXISTS `movies_on_multiple_dvds`*/;
+/*!50001 DROP VIEW IF EXISTS `movies_on_multiple_dvds`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8 */;
+/*!50001 SET character_set_results     = utf8 */;
+/*!50001 SET collation_connection      = utf8_general_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`prosfilaes`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `movies_on_multiple_dvds` AS select `m`.`movie_id` AS `movie_id`,`m`.`name` AS `movie`,`m`.`year` AS `year`,`m`.`is_full_length` AS `ifl`,`m`.`have_watched` AS `hw`,`dc1`.`dvd_id` AS `dvd_id1`,`dvd1`.`name` AS `dvd1`,`dc2`.`dvd_id` AS `dvd_id2`,`dvd2`.`name` AS `dvd2` from ((((`movie` `m` join `dvd_contents` `dc1` on((`dc1`.`movie_id` = `m`.`movie_id`))) join `dvd_contents` `dc2` on(((`dc2`.`movie_id` = `m`.`movie_id`) and (`dc1`.`dvd_id` < `dc2`.`dvd_id`)))) join `dvd` `dvd1` on((`dvd1`.`dvd_id` = `dc1`.`dvd_id`))) join `dvd` `dvd2` on((`dvd2`.`dvd_id` = `dc2`.`dvd_id`))) */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+/*!50001 DROP TABLE IF EXISTS `related_movies`*/;
+/*!50001 DROP VIEW IF EXISTS `related_movies`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8 */;
+/*!50001 SET character_set_results     = utf8 */;
+/*!50001 SET collation_connection      = utf8_general_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`prosfilaes`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `related_movies` AS select `mp1`.`movie_id` AS `base_movie_id`,`mp1`.`person` AS `person`,`m2`.`movie_id` AS `movie_id`,`m2`.`name` AS `movie`,`m2`.`year` AS `year`,`m2`.`have_watched` AS `w`,round(`mb1`.`bacon_num`,4) AS `mb`,round(`mb2`.`bacon_num`,4) AS `mbs`,round(`mb3`.`bacon_num`,4) AS `mbw`,round(`mb4`.`bacon_num`,4) AS `mbfl`,round(`mb6`.`bacon_num`,4) AS `mbfw` from ((((((((`actor` `mp1` join `actor` `mp2` on((`mp1`.`person` = `mp2`.`person`))) join `movie` `m2` on((`mp2`.`movie_id` = `m2`.`movie_id`))) left join `moviebacon` `mb1` on(((`mp2`.`movie_id` = `mb1`.`movie_id`) and (`mb1`.`table_num` = 1)))) left join `moviebacon` `mb2` on(((`mp2`.`movie_id` = `mb2`.`movie_id`) and (`mb2`.`table_num` = 2)))) left join `moviebacon` `mb3` on(((`mp2`.`movie_id` = `mb3`.`movie_id`) and (`mb3`.`table_num` = 3)))) left join `moviebacon` `mb4` on(((`mp2`.`movie_id` = `mb4`.`movie_id`) and (`mb4`.`table_num` = 4)))) left join `moviebacon` `mb5` on(((`mp2`.`movie_id` = `mb5`.`movie_id`) and (`mb5`.`table_num` = 5)))) left join `moviebacon` `mb6` on(((`mp2`.`movie_id` = `mb6`.`movie_id`) and (`mb6`.`table_num` = 6)))) group by `mp1`.`movie_id`,`mp2`.`movie_id` order by `mb1`.`bacon_num`,`mb2`.`bacon_num`,`mb3`.`bacon_num`,`mp2`.`movie_id` */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+/*!50001 DROP TABLE IF EXISTS `watched_movies_no_watched_bacon`*/;
+/*!50001 DROP VIEW IF EXISTS `watched_movies_no_watched_bacon`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8 */;
+/*!50001 SET character_set_results     = utf8 */;
+/*!50001 SET collation_connection      = utf8_general_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`prosfilaes`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `watched_movies_no_watched_bacon` AS select `movie`.`movie_id` AS `movie_id`,left(`movie`.`name`,35) AS `name`,`movie`.`year` AS `year`,`movie`.`is_full_length` AS `ifl` from (`movie` join `moviebacon` `mb` on(((`mb`.`movie_id` = `movie`.`movie_id`) and (`mb`.`table_num` = 1)))) where (`movie`.`have_watched` and (not(`movie`.`movie_id` in (select `moviebacon`.`movie_id` from `moviebacon` where (`moviebacon`.`table_num` = 3))))) */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+/*!50001 DROP TABLE IF EXISTS `year_count`*/;
+/*!50001 DROP VIEW IF EXISTS `year_count`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8 */;
+/*!50001 SET character_set_results     = utf8 */;
+/*!50001 SET collation_connection      = utf8_general_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`prosfilaes`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `year_count` AS select `movie`.`year` AS `year`,count(0) AS `count` from `movie` where (`movie`.`is_full_length` and `movie`.`have_watched`) group by `movie`.`year` */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
