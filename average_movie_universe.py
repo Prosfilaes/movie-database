@@ -107,8 +107,24 @@ def create_table_m2m (table_num):
                      "INNER JOIN tags t1 ON t1.movie_id = m1.movie_id AND t1.tag = 'science fiction' "
                      "INNER JOIN tags t2 ON t2.movie_id = m2.movie_id AND t2.tag = 'science fiction' "
                      "WHERE m1.have_watched AND m1.is_full_length;")
+    elif table_num == 9:
+        cur.execute ("CREATE TEMPORARY TABLE single_movie_dvd_movies "
+                     "(movie_id SMALLINT (5) UNSIGNED UNIQUE NOT NULL, "
+                     "INDEX mid_idx (movie_id)); ")
+        cur.execute ('INSERT INTO single_movie_dvd_movies '
+                     'SELECT DISTINCT movie_id FROM dvd d '
+                     'INNER JOIN dvd_contents dc ON dc.dvd_id = d.dvd_id '
+                     'GROUP BY d.dvd_ID HAVING COUNT(*) = 1;');
+        cur.execute ("INSERT INTO m2m "
+                     "SELECT DISTINCT p1.movie_id, p2.movie_id FROM actor p1 "
+                     "INNER JOIN actor p2 ON p1.person = p2.person AND p1.movie_id != p2.movie_id "
+                     "WHERE p1.movie_id IN (SELECT movie_id from single_movie_dvd_movies); ")  
+        #The natural formulation doesn't work in MySQL, since you can't reference the temporary table small_dvd_movies
+        #twice in one statement
+        cur.execute ("DELETE FROM m2m WHERE movie_id2 NOT IN "
+                     "(SELECT movie_id from single_movie_dvd_movies);")
     else:
-        assert True, "table_nums above 8 are unknown"
+        assert True, "table_nums above 9 are unknown"
     cur.execute ("SELECT * FROM m2m;")
     m2m = cur.fetchall ()
     # make this a list s.t. m2m_dict[i] = None or set()? Would that speed it up?
@@ -136,13 +152,13 @@ def get_movie_set (m2m_dict, movie_id):
         last_set = new_set
     
 try:
-    MAX_TABLENUM = 8
+    MAX_TABLENUM = 9
     # This is inappropriately intertangled in so many ways.
     # The appropriate thing would be to find the largest subset
     # instead of storing a value known to be in the largest subset.
     # That's more work, both coding and computational, and speed
     # matters for this code.
-    initial_movie_id = [None, 376, 376, 376, 376, 376, 376, 4169, 51]
+    initial_movie_id = [None, 376, 376, 376, 376, 376, 376, 4169, 51, 376]
     if (len(sys.argv) != 2 or int(sys.argv[1]) < 1 or
         int(sys.argv[1]) > MAX_TABLENUM):
         
@@ -166,6 +182,8 @@ try:
     cur.execute ("SELECT movie_id, bacon_num FROM moviebacon WHERE table_num = {};"
                  "".format(table_num))
     prior_bacon_nums = dict (cur.fetchall ())
+    if len (prior_bacon_nums) == 0:
+        prior_bacon_nums [-1] = 1
     setup_end_time = time.clock ()
     root_id = initial_movie_id[table_num]
     global_movie_set = get_movie_set (m2m_dict, root_id)
