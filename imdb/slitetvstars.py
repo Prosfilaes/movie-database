@@ -125,10 +125,10 @@ show_actor = dict ()
 show_with_episodes = dict ()
 show_director = dict ()
 #variants = dict ()
-#count = 0
+count = 0
 with open ("act_list", "r") as f:
     for line in f:
-#        count = count + 1
+        count = count + 1
         movie_person = process_line (line)
         if movie_person == None:
             continue
@@ -139,14 +139,14 @@ with open ("act_list", "r") as f:
             show_actor[movie].add(actor)
         else:
             show_actor[movie] = set([actor])
-#        if count > 10000:
-#            break
+        #if count > 10000:
+        #    break
 # load in directors
 name = ""
-#count = 0
+count = 0
 with open ("directors.list", "r") as f:
     for line in f:
-#        count = count + 1
+        count = count + 1
         movie_person = process_line (line)
         if movie_person == None:
             continue
@@ -157,8 +157,8 @@ with open ("directors.list", "r") as f:
             show_director[movie].add(director)
         else:
             show_director[movie] = set([director])
-#        if count > 10000:
-#            break
+        #if count > 10000:
+        #    break
 
 print ("Dumping to SQLite")
 conn = sqlite3.connect('tv_show.db')
@@ -190,7 +190,7 @@ curr.execute ("CREATE TABLE show_no_episode_info (show_name TEXT, year INTEGER, 
 
 for show in show_with_episodes:
     for swe in show_with_episodes [show]: #swe is a Full_Movie
-        curr.execute ("SELECT * FROM episode_names WHERE show_name = ? and season = ? and epsiode = ? and year = ?;",
+        curr.execute ("SELECT * FROM episode_names WHERE show_name = ? and season = ? and episode = ? and year = ?;",
                       (swe.show_name, swe.episode.season_num, swe.episode.episode_num, swe.year))
         matches = curr.fetchall ()
         if len (matches) > 0:
@@ -207,12 +207,20 @@ for show in show_actor: # show is Full_Movie
     for actor in show_actor[show]:
         # Show has no season information; drop on floor and note that we did so
         # hopefully nothing dropped was important
-        if show.episode.season == '':
+        if show.episode.season_num == '':
             curr.execute ("INSERT OR IGNORE INTO show_no_episode_info VALUES (?, ?);", (show.show_name, show.year))
         else: # has episode information
-            # We're not using IGNORE here, in the hopes that we've cleared up the problems with this stuff
-            curr.execute ("INSERT INTO episode_actors VALUES (?, ?, ?, ?);",
-                          (show.show_name, show.year, show.episode.season_num, show.episode.episode_num, actor))
+            # Instead of using IGNORE, we'll check
+            curr.execute ("SELECT * FROM episode_actors WHERE show_name = ? and season = ? and episode = ? and year = ? and actor = ?;",
+                         (show.show_name, show.episode.season_num, show.episode.episode_num, show.year, actor))
+            matches = curr.fetchall ()
+            if len (matches) > 0:
+                print ("Clashing entries for episode_actors!")
+                print (matches)
+                print (show, actor)
+            else:   
+                curr.execute ("INSERT INTO episode_actors VALUES (?, ?, ?, ?, ?);",
+                              (show.show_name, show.year, show.episode.season_num, show.episode.episode_num, actor))
 conn.commit ()
 shutil.copy ('tv_show.db', 'tv_show.db_3')
 
@@ -220,10 +228,19 @@ for show in show_director:
     for director in show_director[show]:
         # Show has no season information; drop on floor and note that we did so
         # hopefully nothing dropped was important
-        if show.episode.season == '':
+        if show.episode.season_num == '':
             curr.execute ("INSERT OR IGNORE INTO show_no_episode_info VALUES (?, ?);", (show.show_name, show.year))
         else: # has episode information
-            curr.execute ("INSERT INTO episode_directors VALUES (?, ?, ?, ?);",
+            # Instead of using IGNORE, we'll check
+            curr.execute ("SELECT * FROM episode_directors WHERE show_name = ? and season = ? and episode = ? and year = ? and director = ?;",
+                         (show.show_name, show.episode.season_num, show.episode.episode_num, show.year, director))
+            matches = curr.fetchall ()
+            if len (matches) > 0:
+                print ("Clashing entries for episode_directors!")
+                print (matches)
+                print (show, director)
+            else:              
+                curr.execute ("INSERT INTO episode_directors VALUES (?, ?, ?, ?, ?);",
                             (show.show_name, show.year, show.episode.season_num, show.episode.episode_num, director))
 conn.commit ()
 shutil.copy ('tv_show.db', 'tv_show.db_4')
