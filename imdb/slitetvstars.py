@@ -128,7 +128,7 @@ show_director = dict ()
 #count = 0
 with open ("act_list", "r") as f:
     for line in f:
-        count = count + 1
+#        count = count + 1
         movie_person = process_line (line)
         if movie_person == None:
             continue
@@ -146,7 +146,7 @@ name = ""
 #count = 0
 with open ("directors.list", "r") as f:
     for line in f:
-        count = count + 1
+#        count = count + 1
         movie_person = process_line (line)
         if movie_person == None:
             continue
