@@ -46,9 +46,9 @@ def parse_episode (episode): # return Episode
         else:
             episode_match = re.match (r"\(([^)]*)\)", episode)
             if episode_match:
-                return (name="", season_num=episode_match.group(1), episode_num="")
+                return Episode(name="", season_num=episode_match.group(1), episode_num="")
             else:
-                return (name=episode, season_num="", episode_num="")
+                return Episode(name=episode, season_num="", episode_num="")
 
 def process_line (line):
 # returns (Full_Movie, person string)
@@ -105,29 +105,7 @@ def process_line (line):
             tv_show = new_tv_show
         full_movie = Full_Movie(show_name=tv_show, year=year, episode=episode)
     else:
-        movie_match = re.match (r'"(.*)" \(([^)]*)\)', movie_part)
-        if not movie_match:
-            print (line, end = "")
-            print ("ERROR: Can't parse movie (no episode) {}".format (movie_part))
-            return
-        tv_show = movie_match.group (1)
-        try:
-            (year, version) = parse_year_version (movie_match.group (2))
-        except ValueError:
-            print (line)
-            print ("Error: {} (no episode) does not parse as year or year & version.".format (
-                    movie_match.group(2)))
-            return
-        if version != "":
-            # New plan: don't handle this at all
-            #new_tv_show = tv_show + " (" + version + ")"
-            #if tv_show in variants:
-            #    (variants[tv_show]).add (new_tv_show)
-            #else:
-            #    variants[tv_show] = set([new_tv_show])            
-            #tv_show = new_tv_show
-            print ("Error: {} has version {}; dropping.".format (tv_show, version))
-        full_movie = Full_Movie(show_name=tv_show, year=year)    
+        return
         
     return (full_movie, actor)
 
@@ -148,15 +126,17 @@ def add_tv_show (show):
             show_names[show.show_name] = set ([show])
 
 Episode = namedtuple ("Episode", "name season_num episode_num")
-Full_Movie = namedtuple ("Full_Movie", "show_name year epsiode")
+Full_Movie = namedtuple ("Full_Movie", "show_name year episode")
 name = ""
 show_names = dict ()
 show_actor = dict ()
 show_with_episodes = dict ()
 show_director = dict ()
 #variants = dict ()
+count = 0
 with open ("act_list", "r") as f:
     for line in f:
+        count = count + 1
         movie_person = process_line (line)
         if movie_person == None:
             continue
@@ -167,10 +147,14 @@ with open ("act_list", "r") as f:
             show_actor[movie].add(actor)
         else:
             show_actor[movie] = set([actor])
+        if count > 10000:
+            break
 # load in directors
 name = ""
+count = 0
 with open ("directors.list", "r") as f:
     for line in f:
+        count = count + 1
         movie_person = process_line (line)
         if movie_person == None:
             continue
@@ -181,6 +165,8 @@ with open ("directors.list", "r") as f:
             show_director[movie].add(director)
         else:
             show_director[movie] = set([director])
+        if count > 10000:
+            break
 
 print ("Dumping to SQLite")
 conn = sqlite3.connect('tv_show.db')
@@ -189,16 +175,10 @@ curr.execute ("CREATE TABLE episode_names (show_name TEXT, season INTEGER, episo
               "episode_name TEXT, year INTEGER, PRIMARY KEY (show_name, year, season, episode));")
 curr.execute ("CREATE INDEX en_show_name_idx ON episode_names (show_name, season);")
 
-curr.execute ("CREATE TABLE simple_show_actors (show_name TEXT, year INTEGER, actor TEXT, "
-              "PRIMARY KEY (show_name, actor));")
-curr.execute ("CREATE INDEX ssa_idx on simple_show_actors (show_name);")
 curr.execute ("CREATE TABLE episode_actors (show_name TEXT, year INTEGER, season INTEGER,  "
               "episode INTEGER, actor TEXT, PRIMARY KEY (show_name, year, season, episode, actor));")
 curr.execute ("CREATE INDEX ea_idx ON episode_actors (show_name, season, episode);")
 
-curr.execute ("CREATE TABLE simple_show_directors (show_name TEXT, year INTEGER, director TEXT, "
-              "PRIMARY KEY (show_name, year, director));")
-curr.execute ("CREATE INDEX ssd_idx ON simple_show_directors (show_name);")
 curr.execute ("CREATE TABLE episode_directors (show_name TEXT, year INTEGER, season INTEGER, "
               "episode INTEGER, director TEXT, "
               "PRIMARY KEY (show_name, year, season, episode, director));")
@@ -225,16 +205,11 @@ shutil.copy ('tv_show.db', 'tv_show.db_2')
 
 for show in show_actor: # show is Full_Movie
     for actor in show_actor[show]:
-        # if it doesn't have epsiode information or that information isn't labled by season (episode number ?!?)
-        if len (show) == 2: # doesn't have episode information
-            # IGNORE here is bad, but the problem is showing up only on the whole data, and I don't want to debug it
-            # Hopefully adding the year means we don't need the IGNORE
-            curr.execute ("INSERT INTO simple_show_actors VALUES (?, ?, ?);", (show.show_name, show.year, actor));
         # Show has no season information; drop on floor and note that we did so
         # hopefully nothing dropped was important
-        elif len (show) == 3 and show.episode.season == '':
+        if show.episode.season == '':
             curr.execute ("INSERT OR IGNORE INTO show_no_episode_info VALUES (?, ?);", (show.show_name, show.year))
-        elif len (show) == 3: # has episode information
+        else: # has episode information
             # We're not using IGNORE here, in the hopes that we've cleared up the problems with this stuff
             curr.execute ("INSERT INTO episode_actors VALUES (?, ?, ?, ?);",
                           (show.show_name, show.year, show.episode.season_num, show.episode.episode_num, actor))
@@ -246,17 +221,11 @@ shutil.copy ('tv_show.db', 'tv_show.db_3')
 
 for show in show_director:
     for director in show_director[show]:
-        # if it doesn't have epsiode information or that information isn't labled by season (episode number ?!?)
-        if len (show) == 2: # doesn't have episode information
-            curr.execute ("INSERT INTO simple_show_directors VALUES (?, ?, ?);", (show.show_name, show.year, director));
         # Show has no season information; drop on floor and note that we did so
         # hopefully nothing dropped was important
-        elif len (show) == 3 and show[2][1] == '':
+        if show.episode.season == '':
             curr.execute ("INSERT OR IGNORE INTO show_no_episode_info VALUES (?, ?);", (show.show_name, show.year))
-        elif len (show) == 3: # has episode information
-            # I hate to use IGNORE here, but there can be multiple epsiodes with the same season/episode and different names
-            # I don't know why it's not bollixing up episode_names.
-            # I hate this data.
+        else: # has episode information
             curr.execute ("INSERT INTO episode_directors VALUES (?, ?, ?, ?);",
                             (show.show_name, show.year, show.episode.season_num, show.episode.episode_num, director))
         else:
