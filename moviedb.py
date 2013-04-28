@@ -386,10 +386,14 @@ def input_one_show (dvd_id):
             episode_num = int (episode_str)
             if episode_num < 1:
                 episode_num = 0
-
+    show_year = 0
+    while (show_year < 1936):
+        show_year_str = input ("IMDB show year (1936-2020): ")
+        show_year = _parse_year (show_year_str);
+        
     movie_year = 0
     while (movie_year < 1936):
-        movie_year_str = input ("Year (1936-2020): ")
+        movie_year_str = input ("Episode year (1936-2020): ")
         movie_year = _parse_year (movie_year_str);
 
     if check_length:
@@ -410,15 +414,15 @@ def input_one_show (dvd_id):
     
     imdbcon = sqlite3.connect ('imdb/tv_show.db')
     imdbcur = imdbcon.cursor ()
-    imdbcur.execute ("SELECT show_name, episode_name, year FROM episode_names "
-                     "WHERE show_name = ? AND season = ? AND episode = ?;",
-                     (show_name, season_num, episode_num))
+    imdbcur.execute ("SELECT show_name, episode_name FROM episode_names "
+                     "WHERE show_name = ? AND season = ? AND episode = ? AND year = ?;",
+                     (show_name, season_num, episode_num, show_year))
     movie_list = imdbcur.fetchall ()
     # We need to deal with this all more elegantly, find some nonmanual solution for loading
     # non-IMDB data
     if len (movie_list) == 1:
-        print ('Is "{}" ({}), season {}, episode {} named "{}" correct?'
-               ''.format (movie_list [0][0], movie_list[0][2], season_num, episode_num, movie_list [0][1]))
+        print ('Is "{}" (IMDB {}), season {}, episode {} named "{}" correct?'
+               ''.format (movie_list [0][0], show_year, season_num, episode_num, movie_list [0][1]))
         is_correct = _yn_to_bool (input (": "))
         if not (is_correct):
             return
@@ -429,7 +433,7 @@ def input_one_show (dvd_id):
         else:
             return
     else:
-        print ("Impossible data returned; bad database.")
+        print ("Multiple episodes return; database problem.")
         print (movie_list)
         return;
       
@@ -468,14 +472,14 @@ def input_one_show (dvd_id):
                  "VALUES ({}, {}, {}, {}, {});"
                  "".format (movie_id, con.escape (show_name), con.escape (episode_name), season_num, episode_num))
     
-    imdbcur.execute ("SELECT actor FROM episode_actors where show_name = ? AND season = ? AND episode = ?;",
-                     (show_name, season_num, episode_num))
+    imdbcur.execute ("SELECT actor FROM episode_actors where show_name = ? AND season = ? AND episode = ? AND year = ?;",
+                     (show_name, season_num, episode_num, show_year))
     actor_list = imdbcur.fetchall ()
     for i in actor_list:
         cur.execute ("INSERT INTO actor VALUES ({}, {});"
                      "".format (con.escape(i[0]), movie_id))
-    imdbcur.execute ("SELECT director FROM episode_directors where show_name = ? AND season = ? AND episode = ?;",
-                     (show_name, season_num, episode_num))    
+    imdbcur.execute ("SELECT director FROM episode_directors where show_name = ? AND season = ? AND episode = ? AND year = ?;",
+                     (show_name, season_num, episode_num, show_year))    
     dir_list = imdbcur.fetchall ()
     for i in dir_list:
         cur.execute ("INSERT INTO director VALUES ({}, {});"
@@ -497,7 +501,17 @@ def input_one_tv_season (dvd_id):
             season_num = int (season_str)
             if season_num < 1 or season_num > 25:
                 season_num = 0
-
+    show_year = 0
+    while (show_year < 1936):
+        show_year_str = input ("IMDB show year (1936-2020): ")
+        show_year = _parse_year (show_year_str);
+        
+    # Problematic; we're still adding bad years, just not as bad, since seasons can cross years
+    movie_year = 0
+    while (movie_year < 1936):
+        movie_year_str = input ("Season year (1936-2020): ")
+        movie_year = _parse_year (movie_year_str);
+        
     if check_length:
         is_full_length = None;
         while (is_full_length == None):
@@ -516,9 +530,9 @@ def input_one_tv_season (dvd_id):
     
     imdbcon = sqlite3.connect ('imdb/tv_show.db')
     imdbcur = imdbcon.cursor ()
-    imdbcur.execute ("SELECT DISTINCT show_name, year FROM episode_names "
-                     "WHERE show_name = ? AND season = ?;",
-                     (show_name, season_num))
+    imdbcur.execute ("SELECT DISTINCT show_name FROM episode_names "
+                     "WHERE show_name = ? AND season = ? AND show_year;",
+                     (show_name, season_num, show_year))
     movie_list = imdbcur.fetchall ()
     if len (movie_list) == 1:
         tvshow = movie_list [0]
@@ -532,24 +546,20 @@ def input_one_tv_season (dvd_id):
         return
     else:
         print ("Non-unique TV shows found: ")
-        i = 0
-        for m in movie_list:
-            print (i, m)
-            i = i + 1
-        tvshow = movie_list [int (input ("Which show is yours? "))]
-    show_year = tvshow [1]
+        print (movie_list)
+        print ("Database problem; exiting.")
     hs_str = input ("Have you seen this season? (Y/N): ")
     have_watched = _yn_to_bool (hs_str)
-    season_year = 0
-    while 1936 > season_year or 2020 < season_year:
-        season_year = int (input ("What year is this season? " ))
-    imdbcur.execute ("SELECT show_name, year, season, episode, episode_name FROM episode_names "
+    #season_year = 0
+    #while 1936 > season_year or 2020 < season_year:
+    #    season_year = int (input ("What year is this season? " ))
+    imdbcur.execute ("SELECT show_name, season, episode, episode_name FROM episode_names "
                      "WHERE show_name = ? and season = ? and year = ? ORDER BY episode;",
                      (show_name, season_num, show_year))
     episode_list = imdbcur.fetchall ()
     for e in episode_list:
         print (e)
-        (show_name, show_year, season_num, episode_num, episode_name) = e;
+        (show_name, season_num, episode_num, episode_name) = e;
         sort_episode_name = mangle_name_for_sort (episode_name)
         sort_tv_show = mangle_name_for_sort (show_name)
         escaped_movie_name = con.escape ('"' + show_name + '": ' + episode_name)
@@ -560,13 +570,13 @@ def input_one_tv_season (dvd_id):
             cur.execute ("INSERT INTO movie "
                          "(movie_id, name, year, is_full_length, sort_name) "
                          "VALUES (null, {}, {}, {}, {})"
-                         ";".format (escaped_movie_name, season_year, 
+                         ";".format (escaped_movie_name, movie_year, 
                                      is_full_length, escaped_sort_name))
         else:
             cur.execute ("INSERT INTO movie "
                          "(movie_id, name, year, is_full_length, have_watched, sort_name) "
                          "VALUES (null, {}, {}, {}, {}, {})"
-                         ";".format (escaped_movie_name, season_year, is_full_length,
+                         ";".format (escaped_movie_name, movie_year, is_full_length,
                                      have_watched, escaped_sort_name))
 
         movie_id = con.insert_id ()
