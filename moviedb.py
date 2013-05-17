@@ -531,7 +531,7 @@ def input_one_tv_season (dvd_id):
     imdbcon = sqlite3.connect ('imdb/tv_show.db')
     imdbcur = imdbcon.cursor ()
     imdbcur.execute ("SELECT DISTINCT show_name FROM episode_names "
-                     "WHERE show_name = ? AND season = ? AND show_year;",
+                     "WHERE show_name = ? AND season = ? AND year = ?;",
                      (show_name, season_num, show_year))
     movie_list = imdbcur.fetchall ()
     if len (movie_list) == 1:
