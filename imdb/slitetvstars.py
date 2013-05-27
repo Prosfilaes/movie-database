@@ -34,12 +34,12 @@ def parse_year_version (year_version):
 
 def parse_episode (episode): # return Episode
     # Episode (#x.y) or just (#x.y)
-    episode_match = re.match (r"(.*) \(#([0-9])*\.([0-9]*)\)", episode)
+    episode_match = re.match (r"(.*) \(#([0-9]*)\.([0-9]*)\)", episode)
     if episode_match:
         return Episode(name=episode_match.group(1).strip(), season_num=episode_match.group(2),
                        episode_num=episode_match.group(3))
     else:
-        episode_match = re.match (r"\(#([0-9])*\.([0-9]*)\)", episode)
+        episode_match = re.match (r"\(#([0-9]*)\.([0-9]*)\)", episode)
         if episode_match:
             return Episode(name="", season_num=episode_match.group(1),
                            episode_num=episode_match.group(2))
