@@ -89,6 +89,8 @@ def create_table_m2m (table_num):
                      "INNER JOIN movie m2 ON p2.movie_id = m2.movie_id AND m2.have_watched AND m2.is_full_length "
                      "WHERE m1.have_watched AND m1.is_full_length;")
     elif table_num == 7:
+        # Why are we bringing in movie here? Whatever, it's not hurting anything
+        # and it's not time-critical to justify breaking working code
         cur.execute ("INSERT INTO m2m "
                      "SELECT DISTINCT p1.movie_id, p2.movie_id FROM actor p1 "
                      "INNER JOIN actor p2 "
@@ -123,8 +125,19 @@ def create_table_m2m (table_num):
         #twice in one statement
         cur.execute ("DELETE FROM m2m WHERE movie_id2 NOT IN "
                      "(SELECT movie_id from single_movie_dvd_movies);")
+    elif table_num == 10:
+        cur.execute ("INSERT INTO m2m "
+                     "SELECT DISTINCT p1.movie_id, p2.movie_id FROM actor p1 "
+                     "INNER JOIN actor p2 "
+                     "ON p1.person = p2.person AND p1.movie_id != p2.movie_id "
+                     "INNER JOIN movie m1 ON p1.movie_id = m1.movie_id  "
+                     "INNER JOIN movie m2 ON p2.movie_id = m2.movie_id  "
+                     "WHERE m1.movie_id in (SELECT movie_id FROM tv_show) AND "
+                     "m2.movie_id in (SELECT movie_id FROM tv_show) AND "
+                     "m1.have_watched AND m2.have_watched "
+                     ";")
     else:
-        assert True, "table_nums above 9 are unknown"
+        assert True, "table_nums above 10 are unknown"
     cur.execute ("SELECT * FROM m2m;")
     m2m = cur.fetchall ()
     # make this a list s.t. m2m_dict[i] = None or set()? Would that speed it up?
@@ -152,13 +165,13 @@ def get_movie_set (m2m_dict, movie_id):
         last_set = new_set
     
 try:
-    MAX_TABLENUM = 9
+    MAX_TABLENUM = 10
     # This is inappropriately intertangled in so many ways.
     # The appropriate thing would be to find the largest subset
     # instead of storing a value known to be in the largest subset.
     # That's more work, both coding and computational, and speed
     # matters for this code.
-    initial_movie_id = [None, 376, 376, 376, 376, 376, 376, 4169, 51, 376]
+    initial_movie_id = [None, 376, 376, 376, 376, 376, 376, 4169, 51, 376, 4169]
     if (len(sys.argv) != 2 or int(sys.argv[1]) < 1 or
         int(sys.argv[1]) > MAX_TABLENUM):
         
