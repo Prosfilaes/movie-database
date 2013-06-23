@@ -5,7 +5,8 @@ that I had to learn SQL to code this.
 
 This code is released under the GNU GPL version 2 or any later version.
 
-The main TODO is to get the HTML exporting functions working again.
 I can't find anything that will explain exactly how a MOBI or AZW
 file is made, which is really the ultimate target, but I can convert
-the HTML for my Kindle.
+the HTML for my Kindle. The HTML code clearly needs some cleaning 
+to make it production worthy; it's in the "everything requires a
+code change" stage right now.
