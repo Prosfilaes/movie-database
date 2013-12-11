@@ -16,13 +16,8 @@ object mainBody {
   val actorConnectionsSQL = Map (
     // Change back from temp_actor_test to actor after getting to work
     (1, 
-     //"""SELECT DISTINCT p1.person, p2.person FROM temp_actor_test p1 
-     //INNER JOIN temp_actor_test p2 ON p1.movie_id = p2.movie_id AND p1.person != p2.person
-     //WHERE p1.person IN (SELECT person FROM temp_actor_test group by person HAVING COUNT(*) > 1) 
-     //AND p2.person IN (SELECT person FROM temp_actor_test group by person HAVING COUNT(*) > 1) 
-     //;"""
-     """SELECT person, movie_id FROM temp_actor_test 
-     WHERE person IN (SELECT person FROM temp_actor_test GROUP BY person HAVING COUNT(*) > 1);"""
+     """SELECT person, movie_id FROM actor 
+     WHERE person IN (SELECT person FROM actor GROUP BY person HAVING COUNT(*) > 1);"""
    )
   )
 
@@ -56,14 +51,13 @@ object mainBody {
   def main (args: Array[String]): Unit = {
     val startTime = System.currentTimeMillis()
 
-    // XXX: tableNumber needs to be parsed out of args
     val tableNumber = if (args.size == 0) 1 else if (args.size == 1) args(0).toInt else -1;
     if (tableNumber == -1) {
       println ("This program only takes one argument, the table number.")
       return
     }
     val (tableDescription, actorConnections, priorBaconNums) = readInitialDatabase (tableNumber);
-
+    val mysqlTime = System.currentTimeMillis()
     val actors = actorConnections.map (_._1).toSet;
 
     // premature optimization
@@ -81,7 +75,6 @@ object mainBody {
     }
 
     val actor2Actor = connectActors (actorConnections)
-    // val actor2Actor = actorConnections.toIndexedSeq.groupBy (_._1).mapValues (_.map(_._2).toSet)
     val setupEndTime = System.currentTimeMillis()
     val reachableActors = graphBacon.reachable (actor2Actor, "Dana Hill (I)")
     val subgraph = actor2Actor -- (actors &~ reachableActors) // remove all keys that aren't reachable
@@ -106,11 +99,12 @@ object mainBody {
     val finalTime = System.currentTimeMillis()
     println ()
 
-    val setupTimeDiff = (setupEndTime - startTime) / 1000.0f
+    val mysqlTimeDiff = (mysqlTime - startTime) / 1000.0f
+    val setupTimeDiff = (setupEndTime - mysqlTime) / 1000.0f
     val travellingTime = (dataCollectionTime - setupEndTime) / 1000.0f
     val perActor = travellingTime / reachableActors.size
     val totalTime = (finalTime - startTime) / 1000.0f
-    println (f"Setup: $setupTimeDiff%.2fs; travelling time: $travellingTime%.2fs; per actor: $perActor%.4fs; total: $totalTime%.2fs")
+    println (f"MySQL time: $mysqlTimeDiff%.2fs; setup: $setupTimeDiff%.2fs; travelling time: $travellingTime%.2fs; per actor: $perActor%.4fs; total: $totalTime%.2fs")
 
     val sumBacon = newBaconList.map(_._2).reduce (_ + _)
     val avgBacon = sumBacon / reachableActors.size
