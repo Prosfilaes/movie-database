@@ -474,7 +474,7 @@ def input_one_show (dvd_id):
     
     imdbcur.execute ("SELECT actor FROM episode_actors where show_name = ? AND season = ? AND episode = ? AND year = ?;",
                      (show_name, season_num, episode_num, show_year))
-    actor_list = imdbcur.fetchall ()
+    actor_list = set(imdbcur.fetchall ())
     for i in actor_list:
         cur.execute ("INSERT INTO actor VALUES ({}, {});"
                      "".format (con.escape(i[0]), movie_id))
@@ -596,7 +596,7 @@ def input_one_tv_season (dvd_id):
         #print ("#4 ")
         imdbcur.execute ("SELECT actor FROM episode_actors where show_name = ? AND season = ? AND episode = ?;",
                          (show_name, season_num, episode_num))
-        actor_list = imdbcur.fetchall ()
+        actor_list = set(imdbcur.fetchall ())
         for i in actor_list:
             cur.execute ("INSERT INTO actor VALUES ({}, {});"
                          "".format (con.escape(i[0]), movie_id))
