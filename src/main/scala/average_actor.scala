@@ -16,11 +16,13 @@ object mainBody {
   val actorConnectionsSQL = Map (
     // Change back from temp_actor_test to actor after getting to work
     (1, 
-     """SELECT DISTINCT p1.person, p2.person FROM temp_actor_test p1 
-     INNER JOIN temp_actor_test p2 ON p1.movie_id = p2.movie_id AND p1.person != p2.person
-     WHERE p1.person IN (SELECT person FROM temp_actor_test group by person HAVING COUNT(*) > 1) 
-     AND p2.person IN (SELECT person FROM temp_actor_test group by person HAVING COUNT(*) > 1) 
-     ;"""
+     //"""SELECT DISTINCT p1.person, p2.person FROM temp_actor_test p1 
+     //INNER JOIN temp_actor_test p2 ON p1.movie_id = p2.movie_id AND p1.person != p2.person
+     //WHERE p1.person IN (SELECT person FROM temp_actor_test group by person HAVING COUNT(*) > 1) 
+     //AND p2.person IN (SELECT person FROM temp_actor_test group by person HAVING COUNT(*) > 1) 
+     //;"""
+     """SELECT person, movie_id FROM temp_actor_test 
+     WHERE person IN (SELECT person FROM temp_actor_test GROUP BY person HAVING COUNT(*) > 1);"""
    )
   )
 
@@ -32,9 +34,9 @@ object mainBody {
   // }
 
   // Returns (Table Description, actor2actor list, map from actor to previous avg. bacon number)
-  def readInitialDatabase (tableNumber: Int) : (String, List[(String, String)], Map[String, Float]) = {
+  def readInitialDatabase (tableNumber: Int) : (String, List[(String, Int)], Map[String, Float]) = {
     Database.forURL("jdbc:mysql://localhost:3306/DVDs", driver = "com.mysql.jdbc.Driver", user=username, password=password) withSession {
-      val actorConnections = Q.query[Unit, (String, String)] (actorConnectionsSQL (tableNumber)).list ()
+      val actorConnections = Q.query[Unit, (String, Int)] (actorConnectionsSQL (tableNumber)).list ()
       val priorBaconNums = Q.query[Int, (String, Float)] (
 	"SELECT person, bacon_num FROM actorbacon WHERE table_num = ?;").list(tableNumber).toMap
       val tableDescription = Q.query[Int, String] ("SELECT description FROM moviebacon_tablenum WHERE table_num = ?;").list(tableNumber).head
@@ -63,10 +65,6 @@ object mainBody {
     val (tableDescription, actorConnections, priorBaconNums) = readInitialDatabase (tableNumber);
 
     val actors = actorConnections.map (_._1).toSet;
-    { // Assert that actors actually lists all the actors
-      val actor2 = actorConnections.map (_._2).toSet
-      assert (actors == actor2, "a1 not in a2: " ++ (actors &~ actor2).mkString ++ "a2 not in a1" ++ (actor2 &~ actors))
-    }
 
     // premature optimization
     // val actorId = actors.zipWithIndex.toMap
@@ -74,7 +72,16 @@ object mainBody {
     // println (actorId)
     // println (reverseActorId)
 
-    val actor2Actor = actorConnections.toIndexedSeq.groupBy (_._1).mapValues (_.map(_._2).toSet)
+    def connectActors (a : Iterable[(String, Int)]) = {
+      def explode (a : Iterable [String]) = {
+	val aSet = a.toSet
+	for (person <- aSet) yield (person, aSet - person)
+      }
+      a.groupBy (_._2).map (_._2.map(_._1)).flatMap (explode).groupBy (_._1).mapValues (_.map (_._2).reduce (_ ++ _))
+    }
+
+    val actor2Actor = connectActors (actorConnections)
+    // val actor2Actor = actorConnections.toIndexedSeq.groupBy (_._1).mapValues (_.map(_._2).toSet)
     val setupEndTime = System.currentTimeMillis()
     val reachableActors = graphBacon.reachable (actor2Actor, "Dana Hill (I)")
     val subgraph = actor2Actor -- (actors &~ reachableActors) // remove all keys that aren't reachable
