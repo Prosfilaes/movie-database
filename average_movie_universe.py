@@ -136,8 +136,17 @@ def create_table_m2m (table_num):
                      "m2.movie_id in (SELECT movie_id FROM tv_show) AND "
                      "m1.have_watched AND m2.have_watched "
                      ";")
+    elif table_num == 11:
+        cur.execute ("INSERT INTO m2m "
+                     "SELECT DISTINCT m1.movie_id, m2.movie_id FROM movie m1 "
+                     "INNER JOIN actor p1 ON p1.movie_id = m1.movie_id "
+                     "INNER JOIN actor p2 ON p1.person = p2.person "
+                     "INNER JOIN movie m2 ON p2.movie_id = m2.movie_id "
+                     "INNER JOIN tags t1 ON t1.movie_id = m1.movie_id AND t1.tag = 'animation' "
+                     "INNER JOIN tags t2 ON t2.movie_id = m2.movie_id AND t2.tag = 'animation' "
+                     ";")
     else:
-        assert True, "table_nums above 10 are unknown"
+        assert True, "table_nums above 11 are unknown"
     cur.execute ("SELECT * FROM m2m;")
     m2m = cur.fetchall ()
     # make this a list s.t. m2m_dict[i] = None or set()? Would that speed it up?
@@ -165,13 +174,13 @@ def get_movie_set (m2m_dict, movie_id):
         last_set = new_set
     
 try:
-    MAX_TABLENUM = 10
+    MAX_TABLENUM = 11
     # This is inappropriately intertangled in so many ways.
     # The appropriate thing would be to find the largest subset
     # instead of storing a value known to be in the largest subset.
     # That's more work, both coding and computational, and speed
     # matters for this code.
-    initial_movie_id = [None, 376, 376, 376, 376, 376, 376, 4169, 51, 376, 4169]
+    initial_movie_id = [None, 376, 376, 376, 376, 376, 376, 4169, 51, 376, 4169, 1390]
     if (len(sys.argv) != 2 or int(sys.argv[1]) < 1 or
         int(sys.argv[1]) > MAX_TABLENUM):
         
