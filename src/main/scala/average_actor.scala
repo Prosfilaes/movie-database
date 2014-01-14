@@ -17,20 +17,51 @@ object mainBody {
 
   val actorConnectionsSQL = Map (
     (1, 
-     """SELECT person, movie_id FROM actor 
-     WHERE person IN (SELECT person FROM actor GROUP BY person HAVING COUNT(*) > 1);"""
+     """SELECT person, movie_id FROM actor;"""
+   ),
+    (2, 
+     """SELECT person, movie_id FROM actor NATURAL JOIN movie m WHERE m.have_watched
+     UNION
+     SELECT DISTINCT person, movie_id FROM actor NATURAL JOIN dvd_contents
+     WHERE dvd_id NOT IN (SELECT dvd_id FROM dvd_tags where tag = \"large movie pack\");"""
+   ),
+    (3,
+     """SELECT person, movie_id FROM actor NATURAL JOIN movie m WHERE m.have_watched;"""
    ),
     (4,
      """SELECT person, movie_id FROM actor NATURAL JOIN movie m
-     WHERE m.is_full_length AND person IN 
-     (SELECT person FROM actor NATURAL JOIN movie m WHERE m.is_full_length 
-     GROUP BY person HAVING COUNT(*) > 1);"""
+     WHERE m.is_full_length;"""
+   ),
+    (5, 
+     """SELECT person, movie_id FROM actor NATURAL JOIN movie m 
+     WHERE m.have_watched AND m.is_full_length
+     UNION
+     SELECT DISTINCT person, movie_id FROM actor NATURAL JOIN movie m NATURAL JOIN dvd_contents
+     WHERE dvd_id NOT IN (SELECT dvd_id FROM dvd_tags where tag = \"large movie pack\")
+     AND m.is_full_length;"""
    ),
     (6,
      """SELECT person, movie_id FROM actor NATURAL JOIN movie m
-     WHERE m.is_full_length AND m.have_watched AND person IN 
-     (SELECT person FROM actor NATURAL JOIN movie m WHERE m.is_full_length 
-     AND m.have_watched GROUP BY person HAVING COUNT(*) > 1);"""
+     WHERE m.is_full_length AND m.have_watched;"""
+   ),
+    (7, 
+     """SELECT person, movie_id FROM actor NATURAL JOIN tv_show t;"""
+   ),
+    (8, 
+     """SELECT DISTINCT person, movie_id FROM actor NATURAL JOIN movie m NATURAL JOIN tags t
+     WHERE t.tag = \"science fiction\" AND m.have_watched AND m.is_full_length;"""
+   ),
+    (9,
+     """SELECT DISTINCT person, movie_id FROM actor NATURAL JOIN dvd_contents WHERE
+     dvd_id IN (SELECT dvd_id FROM dvd_contents GROUP BY dvd_id where COUNT(*) = 1);"""
+   ),    
+    (10, 
+     """SELECT person, movie_id FROM actor NATURAL JOIN tv_show t 
+     NATURAL JOIN movie m WHERE m.have_watched;"""
+   ),
+    (11, 
+     """SELECT person, movie_id FROM actor NATURAL JOIN tags t 
+     WHERE t.tag = \"animation\";"""
    )
   )
 
@@ -68,6 +99,10 @@ object mainBody {
     }
   }
 
+  // Given a list of (a, b), remove all the a's that only appear once
+  def non_unique [A, B](a : Iterable[(A, B)]) = a.groupBy (_._1).filter (_._2.size > 1).values.flatten
+
+  // Transforms a list of (A, B) pairs to a map from A's to a set of other A's that share a B
   def connect [A, B](a : Iterable[(A, B)]) = {
     def explode (a : Iterable [A]) = {
       val aSet = a.toSet
@@ -77,12 +112,53 @@ object mainBody {
     mapValues (_.map (_._2).reduce (_ ++ _))
   }
 
-  class runTimes (val mysqlTime : Float, val setupTime : Float, val travellingTime : Float);
+  class runTimes (val mysqlTime : Float, val setupTime : Float, val travellingTime : Float) {
+    def totalTime = mysqlTime + setupTime + travellingTime
+  }
 
   // I acknowledge that internationalized code needs more care then this. This is unlikely
-  // to ever need internationalized.
-  def reportOut (where: OutputStreamWriter, who: String, who_plural: String, 
-		 data : Map [String, graphBacon.Real], t : runTimes) = ()
+  // to ever need internationalized. Even plural concerns are irrelevant; this is a silly report
+  // on one element.
+  def reportOutHeader (where: PrintWriter, who: String, description: String, size: Integer) = {
+    where.println ("This " + description + " list following is about the relations of " + 
+		   size.toString + " " + who + ".");
+    where.flush()
+  }
+
+  def reportOut (where: PrintWriter, who: String, data : Map [String, graphBacon.Real], 
+		 priorData : Map [String, Float], t : runTimes) = 
+  {
+    val sortedData = data.toIndexedSeq.sortBy (_._2)
+    for (a <- sortedData) {
+      val bacon = a._2
+      where.write (a._1 ++ f": $bacon%.4f")
+      if (priorData.contains (a._1)) {
+	val prior = priorData (a._1)
+	val diff = bacon - prior
+	if (scala.math.abs(diff) < 0.00001) // That is, a "0.0000" represents values in [0.00001 .. 0.0001)
+	  where.println (" / no change")
+	else
+	  where.println (f" / old $prior%.4f / change $diff%+.4f")
+      }
+	else where.println (" / not previously in universe")
+      }
+    where.println ()
+    val perDataTime = t.travellingTime / sortedData.length
+    where.println (
+      f"MySQL time: ${t.mysqlTime}%.2fs; setup: ${t.setupTime}%.2fs; travelling time: " ++
+      f"${t.travellingTime}%.2fs; per actor: $perDataTime%.4fs; total: ${t.totalTime}%.2fs")
+    val sumBacon = sortedData.map(_._2).reduce (_ + _)
+    val avgBacon = sumBacon / sortedData.length
+    if (priorData.size == 0) {
+      where.println (f"Current Bacon nums: $sumBacon%.2f sum, $avgBacon%.6f avg")
+    }
+    else {
+      val sumOldBacon = priorData.map(_._2).reduce (_ + _)
+      val avgOldBacon = sumOldBacon / priorData.size
+      where.println (f"Prior Bacon nums: $sumOldBacon%.2f sum, $avgOldBacon%.2f avg; current Bacon " ++
+			   f"nums: $sumBacon%.2f sum, $avgBacon%.6f avg")
+    }
+  }
 
   def main (args: Array[String]): Unit = {
     try {
@@ -94,13 +170,14 @@ object mainBody {
       }
       val tableNumber = args(0).toInt
       
-      val (tableDescription, actorConnections, priorBaconNums, movieDescriptions) = readInitialDatabase (tableNumber);
+      val (tableDescription, actorConnections, priorActorBacon, movieDescriptions) = 
+	readInitialDatabase (tableNumber);
       val mysqlTime = System.currentTimeMillis()
       
-      val actor2Actor = connect (actorConnections)
+      val actor2Actor = connect (non_unique (actorConnections))
       val movie2Movie = connect (actorConnections.map (x => (x._2, x._1)))
       val setupEndTime = System.currentTimeMillis()
-      val reachingStart = "Dana Hill (I)" // This needs to be much more subtle and error out if she's not found
+      val reachingStart = "Mel Blanc" // Mel Blanc is in every existing moviebacon category
       val reachableActors = graphBacon.reachable (actor2Actor, reachingStart)
       val reachableMovies = graphBacon.reachable (
 	movie2Movie, actorConnections.filter (_._1 == reachingStart).map (_._2).head)
@@ -111,51 +188,18 @@ object mainBody {
       val actorOutput = new PrintWriter(new File(args(1).toString))
       //    val movieOutput = new PrintWriter(new File(args(2).toString))
     
-      actorOutput.println ("This " + tableDescription + " list following is about the relations of " + 
-			   reachableActors.size.toString + " actors.")
-      //    movieOutput.write ("This " + tableDescription + " list following is about the relations of " + 
-      //	     reachableMovies.size.toString + " movies.")    
-      actorOutput.flush()
+      reportOutHeader (actorOutput, "actors", tableDescription, reachableActors.size)
       
       // XXX: Add checking for no changes?
       val newActorBacon : Map [String, graphBacon.Real] = graphBacon.averageDistance (reachableActors, subgraphActor)
+      val actorDataTime = System.currentTimeMillis()
+      val actorRunTime = new runTimes ((mysqlTime - startTime) / 1000.0f, 
+				       (setupEndTime - mysqlTime) / 1000.0f, 
+				       (actorDataTime - setupEndTime) / 1000.0f)
+
       storeActorBaconNumbers (tableNumber, newActorBacon)
-      val newActorBaconList = newActorBacon.toIndexedSeq.sortBy (_._2)
-      val dataCollectionTime = System.currentTimeMillis()
+      reportOut (actorOutput, "actors", newActorBacon, priorActorBacon, actorRunTime)
 
-      for (a <- newActorBaconList)
-	{
-	  val bacon = a._2
-	  actorOutput.print (a._1 ++ f": $bacon%.4f")
-	  if (priorBaconNums.contains (a._1)) {
-	    val prior = priorBaconNums (a._1)
-	    val diff = bacon - prior
-	    actorOutput.println (f" / old $prior%.4f / change $diff%+.4f")
-	  }
-	  else actorOutput.println (" / not previously in universe")
-	}
-      val finalTime = System.currentTimeMillis()
-      actorOutput.println ()
-
-      val mysqlTimeDiff = (mysqlTime - startTime) / 1000.0f
-      val setupTimeDiff = (setupEndTime - mysqlTime) / 1000.0f
-      val travellingTime = (dataCollectionTime - setupEndTime) / 1000.0f
-      val perActor = travellingTime / reachableActors.size
-      val totalTime = (finalTime - startTime) / 1000.0f
-      actorOutput.println (f"MySQL time: $mysqlTimeDiff%.2fs; setup: $setupTimeDiff%.2fs; travelling time: " ++
-			   f"$travellingTime%.2fs; per actor: $perActor%.4fs; total: $totalTime%.2fs")
-
-      val sumBacon = newActorBaconList.map(_._2).reduce (_ + _)
-      val avgBacon = sumBacon / reachableActors.size
-      if (priorBaconNums.size == 0) {
-	actorOutput.println (f"Current Bacon nums: $sumBacon%.2f sum, $avgBacon%.6f avg")
-      }
-      else {
-	val sumOldBacon = priorBaconNums.map(_._2).reduce (_ + _)
-	val avgOldBacon = sumOldBacon / priorBaconNums.size
-	actorOutput.println (f"Prior Bacon nums: $sumOldBacon%.2f sum, $avgOldBacon%.2f avg; current Bacon " ++
-			     f"nums: $sumBacon%.2f sum, $avgBacon%.6f avg")
-      }
       actorOutput.close()
     }
     catch {
