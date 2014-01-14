@@ -7,13 +7,17 @@ object graphBacon {
   // Returns a Set of T's in the subgraph
   def reachable[T] (graph: Map [T, Set[T]], initial: T): Set[T] = {
     def reachable_recur (foundSet : Set[T], curElem : T, curSet : Set[T]) : Set[T] = {
+      var curFoundSet = foundSet
       if (curSet.isEmpty) foundSet
       else {
-	val newElem = curSet.head
-	if (foundSet.contains (newElem)) reachable_recur (foundSet, curElem, curSet.tail)
-	else reachable_recur (reachable_recur (foundSet + newElem, newElem, graph (newElem)), curElem, curSet.tail)
+	for (e <- curSet) {
+	  if (!foundSet.contains (e)) 
+	    curFoundSet = reachable_recur (curFoundSet ++ curSet, e, graph (e))
+	}
+	curFoundSet
       }
     }
+
     reachable_recur (Set (initial), initial, graph (initial))
   }
  
