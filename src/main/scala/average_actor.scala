@@ -23,7 +23,7 @@ object mainBody {
      """SELECT person, movie_id FROM actor NATURAL JOIN movie m WHERE m.have_watched
      UNION
      SELECT DISTINCT person, movie_id FROM actor NATURAL JOIN dvd_contents
-     WHERE dvd_id NOT IN (SELECT dvd_id FROM dvd_tags where tag = \"large movie pack\");"""
+     WHERE dvd_id NOT IN (SELECT dvd_id FROM dvd_tags where tag = "large movie pack");"""
    ),
     (3,
      """SELECT person, movie_id FROM actor NATURAL JOIN movie m WHERE m.have_watched;"""
@@ -37,7 +37,7 @@ object mainBody {
      WHERE m.have_watched AND m.is_full_length
      UNION
      SELECT DISTINCT person, movie_id FROM actor NATURAL JOIN movie m NATURAL JOIN dvd_contents
-     WHERE dvd_id NOT IN (SELECT dvd_id FROM dvd_tags where tag = \"large movie pack\")
+     WHERE dvd_id NOT IN (SELECT dvd_id FROM dvd_tags where tag = "large movie pack")
      AND m.is_full_length;"""
    ),
     (6,
@@ -49,11 +49,11 @@ object mainBody {
    ),
     (8, 
      """SELECT DISTINCT person, movie_id FROM actor NATURAL JOIN movie m NATURAL JOIN tags t
-     WHERE t.tag = \"science fiction\" AND m.have_watched AND m.is_full_length;"""
+     WHERE t.tag = "science fiction" AND m.have_watched AND m.is_full_length;"""
    ),
     (9,
      """SELECT DISTINCT person, movie_id FROM actor NATURAL JOIN dvd_contents WHERE
-     dvd_id IN (SELECT dvd_id FROM dvd_contents GROUP BY dvd_id where COUNT(*) = 1);"""
+     dvd_id IN (SELECT dvd_id FROM dvd_contents GROUP BY dvd_id HAVING COUNT(*) = 1);"""
    ),    
     (10, 
      """SELECT person, movie_id FROM actor NATURAL JOIN tv_show t 
@@ -61,7 +61,7 @@ object mainBody {
    ),
     (11, 
      """SELECT person, movie_id FROM actor NATURAL JOIN tags t 
-     WHERE t.tag = \"animation\";"""
+     WHERE t.tag = "animation";"""
    )
   )
 
@@ -74,18 +74,21 @@ object mainBody {
 
   // Returns (Table Description, actor2actor list, map from actor to previous avg. bacon number, list of movies)
   def readInitialDatabase (tableNumber: Int) : (String, List[(String, Int)], Map[String, Float], 
-						Map [Int, (String, Int)]) 
+						Map[Int, Float], Map[Int, String], Map [Int, (String, Int)]) 
   = {
     Database.forURL("jdbc:mysql://localhost:3306/DVDs", driver = "com.mysql.jdbc.Driver", 
 		    user=username, password=password) withSession {
       val actorConnections = Q.query[Unit, (String, Int)] (actorConnectionsSQL (tableNumber)).list ()
-      val priorBaconNums = Q.query[Int, (String, Float)] (
+      val priorActorBaconNums = Q.query[Int, (String, Float)] (
 	"SELECT person, bacon_num FROM actorbacon WHERE table_num = ?;").list(tableNumber).toMap
+      val priorMovieBaconNums = Q.query[Int, (Int, Float)] (
+	"SELECT movie_id, bacon_num FROM moviebacon WHERE table_num = ?;").list(tableNumber).toMap
       val tableDescription = Q.query[Int, String] (
 	"SELECT description FROM moviebacon_tablenum WHERE table_num = ?;").list(tableNumber).head
       val movieDescriptions = Q.query[Unit, (Int, String, Int)] ("SELECT movie_id, name, year FROM movie;").
 	list().map (x => (x._1, (x._2, x._3))).toMap
-      (tableDescription, actorConnections, priorBaconNums, movieDescriptions)
+      val movieNames = Q.query[Unit, (Int, String)] ("SELECT movie_id, name FROM movie;").list().toMap
+      (tableDescription, actorConnections, priorActorBaconNums, priorMovieBaconNums, movieNames, movieDescriptions)
     }
   }
 
@@ -95,6 +98,16 @@ object mainBody {
       (Q.u + "DELETE FROM actorbacon WHERE table_num = " +? tableNumber + ";").execute
       for (bn <- baconNumbers) {
 	(Q.u + "INSERT INTO actorbacon VALUES (" +? tableNumber + ", " +? bn._1 + ", " +? bn._2 + ");").execute
+      }
+    }
+  }
+
+  def storeMovieBaconNumbers (tableNumber: Int, baconNumbers: Iterable [(Int, graphBacon.Real)]): Unit = {
+    Database.forURL("jdbc:mysql://localhost:3306/DVDs", driver = "com.mysql.jdbc.Driver", user=username, 
+		    password=password) withSession {
+      (Q.u + "DELETE FROM moviebacon WHERE table_num = " +? tableNumber + ";").execute
+      for (bn <- baconNumbers) {
+	(Q.u + "INSERT INTO moviebacon VALUES (" +? tableNumber + ", " +? bn._1 + ", " +? bn._2 + ");").execute
       }
     }
   }
@@ -125,13 +138,13 @@ object mainBody {
     where.flush()
   }
 
-  def reportOut (where: PrintWriter, who: String, data : Map [String, graphBacon.Real], 
-		 priorData : Map [String, Float], t : runTimes) = 
+  def reportOut[A] (where: PrintWriter, who: String, data : Map [A, graphBacon.Real], 
+		 priorData : Map [A, Float], t : runTimes, names : A => String) = 
   {
     val sortedData = data.toIndexedSeq.sortBy (_._2)
     for (a <- sortedData) {
       val bacon = a._2
-      where.write (a._1 ++ f": $bacon%.4f")
+      where.write (names(a._1) ++ f": $bacon%.4f")
       if (priorData.contains (a._1)) {
 	val prior = priorData (a._1)
 	val diff = bacon - prior
@@ -150,13 +163,13 @@ object mainBody {
     val sumBacon = sortedData.map(_._2).reduce (_ + _)
     val avgBacon = sumBacon / sortedData.length
     if (priorData.size == 0) {
-      where.println (f"Current Bacon nums: $sumBacon%.2f sum, $avgBacon%.6f avg")
+      where.println (f"Current Bacon nums: $sumBacon%.2f sum, $avgBacon%.4f avg")
     }
     else {
       val sumOldBacon = priorData.map(_._2).reduce (_ + _)
       val avgOldBacon = sumOldBacon / priorData.size
-      where.println (f"Prior Bacon nums: $sumOldBacon%.2f sum, $avgOldBacon%.2f avg; current Bacon " ++
-			   f"nums: $sumBacon%.2f sum, $avgBacon%.6f avg")
+      where.println (f"Prior Bacon nums: $sumOldBacon%.2f sum, $avgOldBacon%.4f avg; current Bacon " ++
+			   f"nums: $sumBacon%.2f sum, $avgBacon%.4f avg")
     }
   }
 
@@ -170,7 +183,7 @@ object mainBody {
       }
       val tableNumber = args(0).toInt
       
-      val (tableDescription, actorConnections, priorActorBacon, movieDescriptions) = 
+      val (tableDescription, actorConnections, priorActorBacon, priorMovieBacon, movieNames, movieDescriptions) = 
 	readInitialDatabase (tableNumber);
       val mysqlTime = System.currentTimeMillis()
       
@@ -198,9 +211,24 @@ object mainBody {
 				       (actorDataTime - setupEndTime) / 1000.0f)
 
       storeActorBaconNumbers (tableNumber, newActorBacon)
-      reportOut (actorOutput, "actors", newActorBacon, priorActorBacon, actorRunTime)
-
+      reportOut (actorOutput, "actors", newActorBacon, priorActorBacon, actorRunTime, (x : String) => x)
       actorOutput.close()
+
+      val movieOutput = new PrintWriter (new File(args(2).toString))
+      val movieDataStartTime = System.currentTimeMillis()
+      reportOutHeader (movieOutput, "movies", tableDescription, reachableMovies.size)
+
+      // XXX: Add checking for no changes?
+      val newMovieBacon  = graphBacon.averageDistance (reachableMovies, subgraphMovie)
+      val movieDataTime = System.currentTimeMillis()
+      val movieRunTime = new runTimes ((mysqlTime - startTime) / 1000.0f, 
+				       (setupEndTime - mysqlTime) / 1000.0f, 
+				       (movieDataTime - movieDataStartTime) / 1000.0f)
+
+      storeMovieBaconNumbers (tableNumber, newMovieBacon)
+      reportOut (movieOutput, "movies", newMovieBacon, priorMovieBacon, movieRunTime, movieNames)
+      movieOutput.close()
+
     }
     catch {
       case e : Throwable => e.printStackTrace()
