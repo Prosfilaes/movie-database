@@ -281,9 +281,6 @@ def input_one_movie (dvd_id):
         print ("Inserting tags ", end="")
         print (tag_list)
         
-#        people_list = _process_tag_list (input ("Please input notable creators, comma separated: "))
-#        _report_new_people (people_list)
-        
         hs_str = input ("Have you seen this movie? (Y/N): ")
         have_watched = _yn_to_bool (hs_str)
         
@@ -526,9 +523,6 @@ def input_one_tv_season (dvd_id):
         print ("Database problem; exiting.")
     hs_str = input ("Have you seen this season? (Y/N): ")
     have_watched = _yn_to_bool (hs_str)
-    #season_year = 0
-    #while 1936 > season_year or 2020 < season_year:
-    #    season_year = int (input ("What year is this season? " ))
     imdbcur.execute ("SELECT show_name, season, episode, episode_name FROM episode_names "
                      "WHERE show_name = ? and season = ? and year = ? ORDER BY episode;",
                      (show_name, season_num, show_year))
@@ -556,20 +550,16 @@ def input_one_tv_season (dvd_id):
                                      have_watched, escaped_sort_name))
 
         movie_id = con.insert_id ()
-        #print ("#1 ", movie_id)
         for tag in set(tag_list):
             cur.execute ("INSERT INTO tags (movie_id, tag) "
                          "VALUES ({}, {});".format (movie_id, con.escape (tag)))
-        #print ("#2 ")
         cur.execute ("INSERT INTO dvd_contents (dvd_id, movie_id) "
                      "VALUES ({}, {});".format (dvd_id, movie_id))
         cur.execute ("INSERT INTO has_been_retagged VALUES ({});".format (movie_id));
-        #print ("#3 ")
         print (movie_id, show_name, season_num, episode_num)
         cur.execute ("INSERT INTO tv_show (movie_id, show_name, episode_name, season_num, episode_num) "
                      "VALUES ({}, {}, {}, {}, {});"
                      "".format (movie_id, con.escape (show_name), con.escape (episode_name), season_num, episode_num))
-        #print ("#4 ")
         imdbcur.execute ("SELECT actor FROM episode_actors where show_name = ? AND season = ? AND episode = ?;",
                          (show_name, season_num, episode_num))
         actor_list = set(imdbcur.fetchall ())
@@ -578,7 +568,6 @@ def input_one_tv_season (dvd_id):
                          "".format (con.escape(i[0]), movie_id))
         imdbcur.execute ("SELECT director FROM episode_directors where show_name = ? AND season = ? AND episode = ?;",
                          (show_name, season_num, episode_num))
-        #print ("#5")
         dir_list = imdbcur.fetchall ()
         for i in dir_list:
             cur.execute ("INSERT INTO director VALUES ({}, {});"
