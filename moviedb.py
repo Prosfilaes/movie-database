@@ -136,17 +136,6 @@ def preload_movie_values ():
     print (global_tag_list)
     _report_new_tags (global_tag_list)
 
-#def insert_people (movie_id, people_list):
-#    for person in set (people_list):
-#        cur.execute ("SELECT person_id FROM person_name where person = {};".format (con.escape (person)))
-#        if cur.rowcount == 0:
-#            cur.execute ("INSERT INTO person_name (person) VALUES ({});".format(con.escape(person)))
-#            person_id = cur.lastrowid
-#        else:
-#            person_id = cur.fetchone ()[0]
-#        cur.execute ("INSERT INTO movie_people (movie_id, person_id) "
-#                     "VALUES ({}, {});".format (movie_id, person_id))
-
 def input_one_dvd_movie ():
     name = input ("Please enter the name of the movie and DVD: ")
     escaped_name = con.escape (name)
@@ -201,9 +190,6 @@ def input_one_dvd_movie ():
         print ("Inserting tags ", end="")
         print (tag_list)
 
-#        people_list = _process_tag_list (input ("Please input notable creators, comma separated: "))
-#        _report_new_people (people_list)
-
         hs_str = input ("Have you seen this movie? (Y/N): ")
         have_watched = _yn_to_bool (hs_str)
 
@@ -225,7 +211,6 @@ def input_one_dvd_movie ():
         for tag in set (tag_list):
             cur.execute ("INSERT INTO tags (movie_id, tag) "
                          "VALUES ({}, {});".format (movie_id, con.escape (tag)))
-#        insert_people (movie_id, people_list)
     else:
         cur.execute ("SELECT tags.tag FROM tags WHERE tags.movie_id = {};".format (movie_id))
         old_tags_return = cur.fetchall ()
@@ -241,15 +226,6 @@ def input_one_dvd_movie ():
         for tag in set (tag_list):
             cur.execute ("INSERT INTO tags (movie_id, tag) "
                          "VALUES ({}, {});".format (movie_id, con.escape (tag)))
-#        cur.execute ("SELECT person FROM movie_name_person_name WHERE movie_id = {};".format (movie_id))
-#        old_people_return = cur.fetchall ()
-#        old_people = [opeop [0] for opeop in old_people_return]
-#        print ("Existing creators: ", end = "")
-#        print (old_people)
-#        local_people_list = _process_tag_list (input ("Please input notable creators, comma separated: "))
-#        _report_new_people (local_people_list)
-#        people_list = [person for person in local_people_list if person not in old_people]
-#        insert_people (movie_id, people_list)
 
     cur.execute ("INSERT INTO dvd_contents (dvd_id, movie_id) "
                  "VALUES ({}, {});".format (dvd_id, movie_id))
@@ -749,25 +725,9 @@ def insert_people (movie_id, movie, year):
                      "".format (con.escape(i[0]), movie_id))
     return
 
-#def add_people ():
-#    movie_id = input ("Movie id, please: ");
-#    people_list = _process_tag_list (input ("Please input new people, comma separated: "))
-#    _report_new_people (people_list)
-#    insert_people (movie_id, people_list)
-
 def markwatched (movie_id):
     cur.execute ("UPDATE movie SET have_watched = true WHERE movie_id = {};".format (movie_id))
 
 def commit_data ():
     con.commit ()
 
-#except mdb.Error as e:
-#
-#    print (e)
-#    sys.exit(1)
-#
-#finally:
-#
-#    if con:
-#        con.rollback ()
-#        con.close()
