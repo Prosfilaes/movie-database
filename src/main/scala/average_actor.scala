@@ -159,7 +159,7 @@ object mainBody {
     val perDataTime = t.travellingTime / sortedData.length
     where.println (
       f"MySQL time: ${t.mysqlTime}%.2fs; setup: ${t.setupTime}%.2fs; travelling time: " ++
-      f"${t.travellingTime}%.2fs; per actor: $perDataTime%.4fs; total: ${t.totalTime}%.2fs")
+      f"${t.travellingTime}%.2fs; per $who: $perDataTime%.4fs; total: ${t.totalTime}%.2fs")
     val sumBacon = sortedData.map(_._2).reduce (_ + _)
     val avgBacon = sumBacon / sortedData.length
     if (priorData.size == 0) {
@@ -211,12 +211,12 @@ object mainBody {
 				       (actorDataTime - setupEndTime) / 1000.0f)
 
       storeActorBaconNumbers (tableNumber, newActorBacon)
-      reportOut (actorOutput, "actors", newActorBacon, priorActorBacon, actorRunTime, (x : String) => x)
+      reportOut (actorOutput, "actor", newActorBacon, priorActorBacon, actorRunTime, (x : String) => x)
       actorOutput.close()
 
       val movieOutput = new PrintWriter (new File(args(2).toString))
       val movieDataStartTime = System.currentTimeMillis()
-      reportOutHeader (movieOutput, "movies", tableDescription, reachableMovies.size)
+      reportOutHeader (movieOutput, "movie", tableDescription, reachableMovies.size)
 
       // XXX: Add checking for no changes?
       val newMovieBacon  = graphBacon.averageDistance (reachableMovies, subgraphMovie)

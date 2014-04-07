@@ -104,7 +104,7 @@ mysql_open()
 sq_open ()
 mcur.execute ("SELECT m.movie_id, t.name, season_num, have_watched, m.name, m.year FROM tv_show_old t "
               "INNER JOIN movie m on t.movie_id = m.movie_id "
-              "WHERE is_season = 0 AND t.name LIKE \"Get Smart\";")
+              "WHERE is_season = 0 AND m.movie_id = 278;")
               #"WHERE is_season = 1 AND t.name LIKE \"Star Trek%\";");
 shows = mcur.fetchall()
 

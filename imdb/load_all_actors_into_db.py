@@ -39,6 +39,7 @@ def movie_actor_insert (movie_id, name, years):
             print ("\t{}".format (p))
         return
     elif len (possible_matches) == 0:
+        print ("No data for movie_id {}, '{}'".format (movie_id, name))
         return
     if possible_matches[0] in movie_actor:
         for actor in movie_actor[possible_matches[0]]:
@@ -58,18 +59,21 @@ with gzip.open ("act_pickle.gz", "rb") as f:
     movie_actor = pickle.load (f)
     movie_director = pickle.load (f)
 open()
-cur.execute ("SELECT movie_id, imdb_name, year FROM film NATURAL JOIN movie "
-             "WHERE movie_id NOT IN (select actors_imported.movie_id FROM actors_imported) "
-             "UNION "
-             "SELECT movie_id, imdb_name, year FROM short NATURAL JOIN movie "
-             "WHERE movie_id NOT IN (select actors_imported.movie_id FROM actors_imported); ");
-#cur.execute ("SELECT movie_id, name, year FROM movie " 
-#             "WHERE movie_id NOT IN (select tv_show_old.movie_id FROM tv_show_old) "
-#            "WHERE movie_id NOT IN (select actors_imported.movie_id FROM actors_imported) "
-#            "ORDER BY movie_id;")
+print ("done unpickling")
+#cur.execute ("SELECT movie_id, imdb_name, year FROM film NATURAL JOIN movie "
+#             "WHERE movie_id NOT IN (select actors_imported.movie_id FROM actors_imported) "
+#             "UNION "
+#             "SELECT movie_id, imdb_name, year FROM short NATURAL JOIN movie "
+#             "WHERE movie_id NOT IN (select actors_imported.movie_id FROM actors_imported); ");
+cur.execute ("SELECT movie_id, name, year FROM movie " 
+             "WHERE movie_id NOT IN (select tv_show_old.movie_id FROM tv_show_old) "
+            "AND movie_id NOT IN (select actors_imported.movie_id FROM actors_imported) "
+            "AND movie_id NOT IN (select tv_show.movie_id FROM tv_show) "
+            "ORDER BY movie_id;")
 movies = cur.fetchall()
 
 for m in movies:
+    print (m)
     movie_actor_insert (m[0], m[1], str(m[2]))
 con.commit()
 
