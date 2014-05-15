@@ -275,9 +275,13 @@ object mainBody {
 
       reportOutHeader (movieOutput, "movies", tableDescription, reachableMovies.size)
 
-      if ((reachableMovies.drop(3).map (graphBacon.averageDistance (_, subgraphMovie)).sum) < noChangeLimit * 3) {
+      if (scala.math.abs(reachableMovies.drop(3).map (graphBacon.averageDistance (_, subgraphMovie)).sum - 
+                          reachableMovies.drop(3).map (priorMovieBacon(_)).sum)
+           < noChangeLimit * 3) 
+      {
 	noChangeOut (movieOutput)
-      } else {      
+      } 
+      else {      
 	val newMovieBacon  = graphBacon.averageDistance (reachableMovies, subgraphMovie)
 	val movieDataTime = System.currentTimeMillis()
 	val movieRunTime = new runTimes ((mysqlTime - startTime) / 1000.0f, 
