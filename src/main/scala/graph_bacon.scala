@@ -21,7 +21,7 @@ object graphBacon {
     reachable_recur (Set (initial), initial, graph (initial))
   }
  
-  def averageDistance[T] (testPoints : Iterable [T], graph : Map[T, Set[T]]) : Map [T, Real] = testPoints.map (x => (x, averageDistance (x, graph))).toMap
+  def averageDistance[T] (testPoints : Iterable [T], graph : Map[T, Set[T]]) : Map [T, Real] = testPoints.toVector.par.map (x => (x, averageDistance (x, graph))).toList.toMap
   def averageDistance[T] (point : T, graph : Map [T, Set[T]]) : Real = {
     val numElems = graph.size
     def distanceRecur (distance : Int, bucket : Set[T], lastConnected : Set[T], currentSum : Int) : Real = {

@@ -62,6 +62,39 @@ object mainBody {
     (11, 
      """SELECT person, movie_id FROM actor NATURAL JOIN tags t 
      WHERE t.tag = "animation";"""
+   ),
+    (21,
+     """SELECT person, movie_id FROM actor NATURAL JOIN movie m WHERE m.year < 1920;"""
+   ),
+   (22,
+     """SELECT person, movie_id FROM actor NATURAL JOIN movie m WHERE m.year >= 1920 AND m.year < 1930;"""
+   ),
+   (23,
+     """SELECT person, movie_id FROM actor NATURAL JOIN movie m WHERE m.year >= 1930 AND m.year < 1940;"""
+   ),
+   (24,
+     """SELECT person, movie_id FROM actor NATURAL JOIN movie m WHERE m.year >= 1940 AND m.year < 1950;"""
+   ),
+   (25,
+     """SELECT person, movie_id FROM actor NATURAL JOIN movie m WHERE m.year >= 1950 AND m.year < 1960;"""
+   ),
+   (26,
+     """SELECT person, movie_id FROM actor NATURAL JOIN movie m WHERE m.year >= 1960 AND m.year < 1970;"""
+   ),
+   (27,
+     """SELECT person, movie_id FROM actor NATURAL JOIN movie m WHERE m.year >= 1970 AND m.year < 1980;"""
+   ),
+   (28,
+     """SELECT person, movie_id FROM actor NATURAL JOIN movie m WHERE m.year >= 1980 AND m.year < 1990;"""
+   ),
+   (29,
+     """SELECT person, movie_id FROM actor NATURAL JOIN movie m WHERE m.year >= 1990 AND m.year < 2000;"""
+   ),
+   (30,
+     """SELECT person, movie_id FROM actor NATURAL JOIN movie m WHERE m.year >= 2000 AND m.year < 2010;"""
+   ),
+   (31,
+     """SELECT person, movie_id FROM actor NATURAL JOIN movie m WHERE m.year >= 2010 AND m.year < 2020;"""
    )
   )
 
@@ -138,6 +171,11 @@ object mainBody {
     where.flush()
   }
 
+  val noChangeLimit = 0.00001
+  def noChangeOut (where: PrintWriter) = {
+    where.println ("Results haven't changed since last run; aborting.");
+  }
+
   def reportOut[A] (where: PrintWriter, who: String, data : Map [A, graphBacon.Real], 
 		 priorData : Map [A, Float], t : runTimes, names : A => String) = 
   {
@@ -148,7 +186,7 @@ object mainBody {
       if (priorData.contains (a._1)) {
 	val prior = priorData (a._1)
 	val diff = bacon - prior
-	if (scala.math.abs(diff) < 0.00001) // That is, a "0.0000" represents values in [0.00001 .. 0.0001)
+	if (scala.math.abs(diff) < noChangeLimit) // That is, a "0.0000" represents values in [0.00001 .. 0.0001)
 	  where.println (" / no change")
 	else
 	  where.println (f" / old $prior%.4f / change $diff%+.4f")
@@ -182,6 +220,10 @@ object mainBody {
 	return
       }
       val tableNumber = args(0).toInt
+      if (tableNumber == 12) {
+	mainDoubleBody.start (args(2))
+	return
+      }
       
       val (tableDescription, actorConnections, priorActorBacon, priorMovieBacon, movieNames, movieDescriptions) = 
 	readInitialDatabase (tableNumber);
@@ -190,7 +232,15 @@ object mainBody {
       val actor2Actor = connect (non_unique (actorConnections))
       val movie2Movie = connect (actorConnections.map (x => (x._2, x._1)))
       val setupEndTime = System.currentTimeMillis()
-      val reachingStart = "Mel Blanc" // Mel Blanc is in every existing moviebacon category
+      val reachingStart = 
+	if (tableNumber <= 12) "Mel Blanc"
+	else if (tableNumber == 21) "Charles Chaplin"
+	else if (tableNumber == 22) "Buster Keaton"
+	else if (tableNumber == 23 || tableNumber == 24 || tableNumber == 25) "Bela Lugosi"
+        else if (tableNumber == 26 || tableNumber == 27 || tableNumber == 28 || tableNumber == 29) "Sean Connery"
+	else if (tableNumber == 30) "Ben Stiller"
+	else if (tableNumber == 31) "Christopher Lee (I)"
+	else throw new Exception ("Unknown tableNumber in finding start")
       val reachableActors = graphBacon.reachable (actor2Actor, reachingStart)
       val reachableMovies = graphBacon.reachable (
 	movie2Movie, actorConnections.filter (_._1 == reachingStart).map (_._2).head)
@@ -199,34 +249,44 @@ object mainBody {
       val subgraphMovie = movie2Movie -- (movie2Movie.keySet &~ reachableMovies)
       
       val actorOutput = new PrintWriter(new File(args(1).toString))
-      //    val movieOutput = new PrintWriter(new File(args(2).toString))
     
       reportOutHeader (actorOutput, "actors", tableDescription, reachableActors.size)
-      
-      // XXX: Add checking for no changes?
-      val newActorBacon : Map [String, graphBacon.Real] = graphBacon.averageDistance (reachableActors, subgraphActor)
-      val actorDataTime = System.currentTimeMillis()
-      val actorRunTime = new runTimes ((mysqlTime - startTime) / 1000.0f, 
-				       (setupEndTime - mysqlTime) / 1000.0f, 
-				       (actorDataTime - setupEndTime) / 1000.0f)
 
-      storeActorBaconNumbers (tableNumber, newActorBacon)
-      reportOut (actorOutput, "actor", newActorBacon, priorActorBacon, actorRunTime, (x : String) => x)
+      if (scala.math.abs(reachableActors.drop(3).map (graphBacon.averageDistance (_, subgraphActor)).sum - 
+                          reachableActors.drop(3).map (priorActorBacon(_)).sum)
+           < noChangeLimit * 3) 
+      {
+	noChangeOut (actorOutput)
+      } 
+      else {
+	val newActorBacon : Map [String, graphBacon.Real] = graphBacon.averageDistance (reachableActors, subgraphActor)
+	val actorDataTime = System.currentTimeMillis()
+	val actorRunTime = new runTimes ((mysqlTime - startTime) / 1000.0f, 
+					 (setupEndTime - mysqlTime) / 1000.0f, 
+					 (actorDataTime - setupEndTime) / 1000.0f)
+
+	storeActorBaconNumbers (tableNumber, newActorBacon)
+	reportOut (actorOutput, "actor", newActorBacon, priorActorBacon, actorRunTime, (x : String) => x)
+      }
       actorOutput.close()
 
       val movieOutput = new PrintWriter (new File(args(2).toString))
       val movieDataStartTime = System.currentTimeMillis()
-      reportOutHeader (movieOutput, "movie", tableDescription, reachableMovies.size)
 
-      // XXX: Add checking for no changes?
-      val newMovieBacon  = graphBacon.averageDistance (reachableMovies, subgraphMovie)
-      val movieDataTime = System.currentTimeMillis()
-      val movieRunTime = new runTimes ((mysqlTime - startTime) / 1000.0f, 
-				       (setupEndTime - mysqlTime) / 1000.0f, 
-				       (movieDataTime - movieDataStartTime) / 1000.0f)
+      reportOutHeader (movieOutput, "movies", tableDescription, reachableMovies.size)
 
-      storeMovieBaconNumbers (tableNumber, newMovieBacon)
-      reportOut (movieOutput, "movies", newMovieBacon, priorMovieBacon, movieRunTime, movieNames)
+      if ((reachableMovies.drop(3).map (graphBacon.averageDistance (_, subgraphMovie)).sum) < noChangeLimit * 3) {
+	noChangeOut (movieOutput)
+      } else {      
+	val newMovieBacon  = graphBacon.averageDistance (reachableMovies, subgraphMovie)
+	val movieDataTime = System.currentTimeMillis()
+	val movieRunTime = new runTimes ((mysqlTime - startTime) / 1000.0f, 
+					 (setupEndTime - mysqlTime) / 1000.0f, 
+					 (movieDataTime - movieDataStartTime) / 1000.0f)
+
+	storeMovieBaconNumbers (tableNumber, newMovieBacon)
+	reportOut (movieOutput, "movies", newMovieBacon, priorMovieBacon, movieRunTime, movieNames)
+      }
       movieOutput.close()
 
     }
