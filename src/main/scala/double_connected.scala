@@ -27,7 +27,7 @@ object mainDoubleBody {
   // }
 
   def readInitialDatabase : (String, List[(Int, Int)], Map[Int, Float], 
-						Map[Int, String], Map [Int, (String, Int)]) 
+						Map[Int, String]) 
   = {
     Database.forURL("jdbc:mysql://localhost:3306/DVDs", driver = "com.mysql.jdbc.Driver", 
 		    user=username, password=password) withSession {
@@ -39,10 +39,8 @@ object mainDoubleBody {
 	"SELECT movie_id, bacon_num FROM moviebacon WHERE table_num = 12;").list().toMap
       val tableDescription = Q.query[Unit, String] (
 	"SELECT description FROM moviebacon_tablenum WHERE table_num = 12;").list().head
-      val movieDescriptions = Q.query[Unit, (Int, String, Int)] ("SELECT movie_id, name, year FROM movie;").
-	list().map (x => (x._1, (x._2, x._3))).toMap
       val movieNames = Q.query[Unit, (Int, String)] ("SELECT movie_id, name FROM movie;").list().toMap
-      (tableDescription, movieConnections, priorMovieBaconNums, movieNames, movieDescriptions)
+      (tableDescription, movieConnections, priorMovieBaconNums, movieNames)
     }
   }
 
@@ -109,14 +107,9 @@ object mainDoubleBody {
     try {
       val startTime = System.currentTimeMillis()
 
-//      if (args.size != 1) {
-//	println ("This program takes one argument, the movie filename")
-//	return
-  //    }
-
       val tableNumber = 12
       
-      val (tableDescription, movieConnections, priorMovieBacon, movieNames, movieDescriptions) = 
+      val (tableDescription, movieConnections, priorMovieBacon, movieNames) = 
 	readInitialDatabase;
       val mysqlTime = System.currentTimeMillis()
       
