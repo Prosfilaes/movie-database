@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import pymysql as mdb
+import mysql.connector as mdb
 import sys
 import readline
 import sqlite3
@@ -36,18 +36,11 @@ def _process_tag_list (s):
 def _report_new_tags (tag_list, prefix = ""):
     for tag in tag_list:
         cur.execute ("SELECT {0}tags.tag FROM {0}tags "
-                     "WHERE {0}tags.tag = {1};".format (prefix, con.escape (tag)));
+                     "WHERE {0}tags.tag = %(tag)s;".format(prefix), {'tag': tag});
         numrows = cur.rowcount
         if numrows == 0:
             print (tag + " is new in the system.")
-
-#def _report_new_people (people_list):
-#    for person in people_list:
-#        cur.execute ("SELECT person FROM person_name "
-#                     "WHERE person = {};".format (con.escape (person)));
-#        numrows = cur.rowcount
-#        if numrows == 0:
-#            print (person + " is new in the system.")
+        clear_rows = cur.fetchall()
 
 check_length = True
 con = None
@@ -63,7 +56,7 @@ def open ():
         l = pass_file.readline().split()
         username = l[0]
         password = l[1]
-    con = mdb.connect('localhost', username, password, 'DVDs', use_unicode=True, charset="utf8")
+    con = mdb.connect(user=username, password=password, database='DVDs', use_unicode=True, charset="utf8")
     cur = con.cursor()
     cur.execute ("SET NAMES 'utf8'")
     return (con, cur)
@@ -71,32 +64,30 @@ def open ():
 def new_dvd ():
     '''Create a new dvd in the system, returning the dvd_id'''
     dvd_name = input ("Please enter the name of the DVD (set): ")
-    escaped_dvd_name = con.escape (dvd_name)
-    cur.execute ("INSERT INTO dvd (dvd_id, name) VALUES (null, {});".format (escaped_dvd_name))
-    dvd_id = con.insert_id ()
+    cur.execute ("INSERT INTO dvd (dvd_id, name) VALUES (null, %(name)s)", {'name' : dvd_name})
+    dvd_id = cur.lastrowid 
     dvd_tag_list = _process_tag_list (input ("Please input dvd tags, comma separated: "))
     print ("DVD tags will be: ", end = "")
     print (dvd_tag_list)
     _report_new_tags (dvd_tag_list, "dvd_")
     for dvd_tag in dvd_tag_list:
         cur.execute ("INSERT INTO dvd_tags (dvd_id, tag) "
-                     "VALUES ({}, {});".format (dvd_id, con.escape (dvd_tag)))
+                     "VALUES (%s, %s);", (dvd_id, dvd_tag))
     return dvd_id
 
 def new_tvshow ():
     '''Create a new dvd that has a TV show in the system, returning the dvd_id'''
     global tv_show
     dvd_name = input ("Please enter the name of the DVD (set): ")
-    escaped_dvd_name = con.escape (dvd_name)
-    cur.execute ("INSERT INTO dvd (dvd_id, name) VALUES (null, {});".format (escaped_dvd_name))
-    dvd_id = con.insert_id ()
+    cur.execute ("INSERT INTO dvd (dvd_id, name) VALUES (null, %(name)s", {'name' : dvd_name})
+    dvd_id = cur.lastrowid
     dvd_tag_list = _process_tag_list (input ("Please input dvd tags, comma separated: "))
     print ("DVD tags will be: ", end = "")
     print (dvd_tag_list)
     _report_new_tags (dvd_tag_list, "dvd_")
     for dvd_tag in dvd_tag_list:
         cur.execute ("INSERT INTO dvd_tags (dvd_id, tag) "
-                     "VALUES ({}, {});".format (dvd_id, con.escape (dvd_tag)))
+                     "VALUES (%s, %s);", (dvd_id, dvd_tag))
     tv_show = input ("Please enter the name of the TV show: ")
     return dvd_id
 
@@ -138,23 +129,21 @@ def preload_movie_values ():
 
 def input_one_dvd_movie ():
     name = input ("Please enter the name of the movie and DVD: ")
-    escaped_name = con.escape (name)
-    cur.execute ("INSERT INTO dvd (dvd_id, name) VALUES (null, {});".format (escaped_name))
-    dvd_id = con.insert_id ()
+    cur.execute ("INSERT INTO dvd (dvd_id, name) VALUES (null, %(name)s);", {'name': name})
+    dvd_id = cur.lastrowid
     dvd_tag_list = _process_tag_list (input ("Please input dvd tags, comma separated: "))
     print ("DVD tags will be: ", end = "")
     print (dvd_tag_list)
     _report_new_tags (dvd_tag_list, "dvd_")
     for dvd_tag in dvd_tag_list:
         cur.execute ("INSERT INTO dvd_tags (dvd_id, tag) "
-                     "VALUES ({}, {});".format (dvd_id, con.escape (dvd_tag)))
+                     "VALUES (%s, %s);", (dvd_id, dvd_tag))
 
-    cur.execute ("SELECT * FROM movie WHERE movie.name = {};"
-                 "".format (escaped_name))
+    cur.execute ("SELECT * FROM movie WHERE movie.name = %(name)s;", {'name': name})
     rows = cur.fetchall ()
     cur.execute ("SELECT movie.movie_id, movie.name, amn.name, movie.year, movie.is_full_length "
                  "FROM alternate_movie_names amn INNER JOIN movie ON amn.movie_id = movie.movie_id "
-                 "WHERE amn.name = {};".format (escaped_name))
+                 "WHERE amn.name = %(name)s;", {'name': name})
     rows += cur.fetchall ()
     is_existing_movie = False;
     if len (rows) > 0:
@@ -193,24 +182,23 @@ def input_one_dvd_movie ():
         hs_str = input ("Have you seen this movie? (Y/N): ")
         have_watched = _yn_to_bool (hs_str)
 
-        sort_name = con.escape (mangle_name_for_sort (name))
         if have_watched == None:
             cur.execute ("INSERT INTO movie "
                          "(movie_id, name, year, is_full_length, sort_name) "
-                         "VALUES (null, {}, {}, {}, {})"
-                         ";".format (escaped_name, movie_year, 
-                                     is_full_length, sort_name))
+                         "VALUES (null, %s, %s, %s, %s)",
+                         (name, movie_year, 
+                          is_full_length, mangle_name_for_sort (name)))
         else:
             cur.execute ("INSERT INTO movie "
                          "(movie_id, name, year, is_full_length, have_watched, sort_name) "
-                         "VALUES (null, {}, {}, {}, {}, {})"
-                         ";".format (escaped_name, movie_year, is_full_length,
-                                     have_watched, sort_name))
+                         "VALUES (null, %s, %s, %s, %s, %s)",
+                         (name, movie_year, is_full_length, have_watched,
+                          mangle_name_for_sort (name)))
 
-        movie_id = con.insert_id ()
+        movie_id = cur.lastrowid
         for tag in set (tag_list):
             cur.execute ("INSERT INTO tags (movie_id, tag) "
-                         "VALUES ({}, {});".format (movie_id, con.escape (tag)))
+                         "VALUES (%s, %s);", (movie_id, tag))
     else:
         cur.execute ("SELECT tags.tag FROM tags WHERE tags.movie_id = {};".format (movie_id))
         old_tags_return = cur.fetchall ()
@@ -225,10 +213,10 @@ def input_one_dvd_movie ():
         print (tag_list)
         for tag in set (tag_list):
             cur.execute ("INSERT INTO tags (movie_id, tag) "
-                         "VALUES ({}, {});".format (movie_id, con.escape (tag)))
+                         "VALUES (%s, %s);", (movie_id, tag))
 
     cur.execute ("INSERT INTO dvd_contents (dvd_id, movie_id) "
-                 "VALUES ({}, {});".format (dvd_id, movie_id))
+                 "VALUES (%s, %s);", (dvd_id, movie_id))
     cur.execute ("INSERT IGNORE INTO has_been_retagged VALUES ({});".format (movie_id));
     return dvd_id;
 
@@ -236,12 +224,11 @@ def input_one_movie (dvd_id):
     movie_name = input ("Name of the movie, or hit enter to exit: ").strip()
     if movie_name == "":
         return;
-    escaped_movie_name = con.escape (movie_name)
-    cur.execute ("SELECT * FROM movie WHERE movie.name = {};".format (escaped_movie_name))
+    cur.execute ("SELECT * FROM movie WHERE movie.name = %(name)s;", {'name': movie_name})
     rows = cur.fetchall ()
     cur.execute ("SELECT movie.movie_id, movie.name, amn.name, movie.year, movie.is_full_length "
                  "FROM alternate_movie_names amn INNER JOIN movie ON amn.movie_id = movie.movie_id "
-                 "WHERE amn.name = {};".format (escaped_movie_name))
+                 "WHERE amn.name = %(name)s;", {'name' : movie_name})
     rows += cur.fetchall ()
     is_existing_movie = False;
     
@@ -284,25 +271,24 @@ def input_one_movie (dvd_id):
         hs_str = input ("Have you seen this movie? (Y/N): ")
         have_watched = _yn_to_bool (hs_str)
         
-        sort_name = con.escape (mangle_name_for_sort (movie_name))
+        sort_name = mangle_name_for_sort (movie_name)
 
         if have_watched == None:
             cur.execute ("INSERT INTO movie "
                          "(movie_id, name, year, is_full_length, sort_name) "
-                         "VALUES (null, {}, {}, {}, {})"
-                         ";".format (escaped_movie_name, movie_year, 
-                                     is_full_length, sort_name))
+                         "VALUES (null, %s, %s, %s, %s)"
+                         ";", (movie_name, movie_year, is_full_length, sort_name))
         else:
             cur.execute ("INSERT INTO movie "
                          "(movie_id, name, year, is_full_length, have_watched, sort_name) "
-                         "VALUES (null, {}, {}, {}, {}, {})"
-                         ";".format (escaped_movie_name, movie_year, is_full_length,
+                         "VALUES (null, %s, %s, %s, %s, %s)"
+                         ";", (movie_name, movie_year, is_full_length,
                                      have_watched, sort_name))
 
-        movie_id = con.insert_id ()
+        movie_id = cur.lastrowid
         for tag in set (tag_list):
             cur.execute ("INSERT INTO tags (movie_id, tag) "
-                         "VALUES ({}, {});".format (movie_id, con.escape (tag)))
+                         "VALUES (%s, %s);",(movie_id, tag))
         insert_people (movie_id, movie_name, movie_year)
     else:
         cur.execute ("SELECT tags.tag FROM tags WHERE tags.movie_id = {};".format (movie_id))
@@ -318,12 +304,13 @@ def input_one_movie (dvd_id):
         print (tag_list)
         for tag in set (tag_list):
             cur.execute ("INSERT INTO tags (movie_id, tag) "
-                         "VALUES ({}, {});".format (movie_id, con.escape (tag)))
+                         "VALUES (%s, %s);", (movie_id, tag))
     cur.execute ("INSERT INTO dvd_contents (dvd_id, movie_id) "
-                 "VALUES ({}, {});".format (dvd_id, movie_id))
-    cur.execute ("SELECT * FROM has_been_retagged WHERE movie_id = {};".format (movie_id));
+                 "VALUES (%s, %s);", (dvd_id, movie_id))
+    cur.execute ("SELECT * FROM has_been_retagged WHERE movie_id = {};".format(movie_id));
     if cur.rowcount == 0:
         cur.execute ("INSERT INTO has_been_retagged VALUES ({});".format (movie_id));
+    trash = cur.fetchall () 
     return movie_id;
 
 def add_people (movie_id):
@@ -415,48 +402,45 @@ def input_one_show (dvd_id):
 
     sort_episode_name = mangle_name_for_sort (episode_name)
     sort_tv_show = mangle_name_for_sort (show_name)
-    escaped_movie_name = con.escape ('"' + show_name + '": ' + episode_name)
-    escaped_sort_name = con.escape ('"' + sort_tv_show + '": ' + sort_episode_name)
+    movie_name = ('"' + show_name + '": ' + episode_name)
+    sort_name = ('"' + sort_tv_show + '": ' + sort_episode_name)
 
-    print ((sort_episode_name, sort_tv_show, escaped_movie_name, escaped_sort_name))
+    print ((sort_episode_name, sort_tv_show, movie_name, sort_name))
     if have_watched == None:
         cur.execute ("INSERT INTO movie "
                      "(movie_id, name, year, is_full_length, sort_name) "
-                     "VALUES (null, {}, {}, {}, {})"
-                     ";".format (escaped_movie_name, movie_year, 
-                                 is_full_length, escaped_sort_name))
+                     "VALUES (null, %s, %s, %s, %s)",
+                    (movie_name, movie_year, is_full_length, sort_name))
     else:
         cur.execute ("INSERT INTO movie "
                      "(movie_id, name, year, is_full_length, have_watched, sort_name) "
-                     "VALUES (null, {}, {}, {}, {}, {})"
-                     ";".format (escaped_movie_name, movie_year, is_full_length,
-                                 have_watched, escaped_sort_name))
+                     "VALUES (null, %s, %s, %s, %s, %s)",
+                     (movie_name, movie_year, is_full_length, have_watched, sort_name))
 
-    movie_id = con.insert_id ()
+    movie_id = cur.lastrowid
     for tag in set(tag_list):
         cur.execute ("INSERT INTO tags (movie_id, tag) "
-                     "VALUES ({}, {});".format (movie_id, con.escape (tag)))
+                     "VALUES (%s, %s);", (movie_id, tag))
 
     cur.execute ("INSERT INTO dvd_contents (dvd_id, movie_id) "
-                 "VALUES ({}, {});".format (dvd_id, movie_id))
+                 "VALUES (%s, %s);", (dvd_id, movie_id))
     cur.execute ("INSERT INTO has_been_retagged VALUES ({});".format (movie_id));
     print (movie_id, show_name, season_num, episode_num)
     cur.execute ("INSERT INTO tv_show (movie_id, show_name, episode_name, season_num, episode_num) "
-                 "VALUES ({}, {}, {}, {}, {});"
-                 "".format (movie_id, con.escape (show_name), con.escape (episode_name), season_num, episode_num))
+                 "VALUES (%s, %s, %s, %s, %s);",
+                (movie_id, show_name, episode_name, season_num, episode_num))
     
     imdbcur.execute ("SELECT actor FROM episode_actors where show_name = ? AND season = ? AND episode = ? AND year = ?;",
                      (show_name, season_num, episode_num, show_year))
     actor_list = set(imdbcur.fetchall ())
     for i in actor_list:
-        cur.execute ("INSERT INTO actor VALUES ({}, {});"
-                     "".format (con.escape(i[0]), movie_id))
+        cur.execute ("INSERT INTO actor VALUES (%s, %s);",
+                     (i[0], movie_id))
     imdbcur.execute ("SELECT director FROM episode_directors where show_name = ? AND season = ? AND episode = ? AND year = ?;",
                      (show_name, season_num, episode_num, show_year))    
     dir_list = imdbcur.fetchall ()
     for i in dir_list:
-        cur.execute ("INSERT INTO director VALUES ({}, {});"
-                     "".format (con.escape(i[0]), movie_id))
+        cur.execute ("INSERT INTO director VALUES (%s, %s);", (i[0], movie_id))
     imdbcon.rollback ()
     imdbcon.close ()
     print ()
@@ -532,48 +516,43 @@ def input_one_tv_season (dvd_id):
         (show_name, season_num, episode_num, episode_name) = e;
         sort_episode_name = mangle_name_for_sort (episode_name)
         sort_tv_show = mangle_name_for_sort (show_name)
-        escaped_movie_name = con.escape ('"' + show_name + '": ' + episode_name)
-        escaped_sort_name = con.escape ('"' + sort_tv_show + '": ' + sort_episode_name)
+        movie_name = ('"' + show_name + '": ' + episode_name)
+        sort_name = ('"' + sort_tv_show + '": ' + sort_episode_name)
 
-        print ((sort_episode_name, sort_tv_show, escaped_movie_name, escaped_sort_name))
+        print ((sort_episode_name, sort_tv_show, movie_name, sort_name))
         if have_watched == None:
             cur.execute ("INSERT INTO movie "
                          "(movie_id, name, year, is_full_length, sort_name) "
-                         "VALUES (null, {}, {}, {}, {})"
-                         ";".format (escaped_movie_name, movie_year, 
-                                     is_full_length, escaped_sort_name))
+                         "VALUES (null, %s, %s, %s, %s)",
+                         (movie_name, movie_year, is_full_length, sort_name))
         else:
             cur.execute ("INSERT INTO movie "
                          "(movie_id, name, year, is_full_length, have_watched, sort_name) "
-                         "VALUES (null, {}, {}, {}, {}, {})"
-                         ";".format (escaped_movie_name, movie_year, is_full_length,
-                                     have_watched, escaped_sort_name))
+                         "VALUES (null, %s, %s, %s, %s, %s)",
+                         (movie_name, movie_year, is_full_length, have_watched, sort_name))
 
-        movie_id = con.insert_id ()
+        movie_id = cur.lastrowid
         for tag in set(tag_list):
             cur.execute ("INSERT INTO tags (movie_id, tag) "
-                         "VALUES ({}, {});".format (movie_id, con.escape (tag)))
+                         "VALUES (%s, %s);", (movie_id, tag))
         cur.execute ("INSERT INTO dvd_contents (dvd_id, movie_id) "
-                     "VALUES ({}, {});".format (dvd_id, movie_id))
+                     "VALUES (%s, %s);", (dvd_id, movie_id))
         cur.execute ("INSERT INTO has_been_retagged VALUES ({});".format (movie_id));
         print (movie_id, show_name, season_num, episode_num)
         cur.execute ("INSERT INTO tv_show (movie_id, show_name, episode_name, season_num, episode_num) "
-                     "VALUES ({}, {}, {}, {}, {});"
-                     "".format (movie_id, con.escape (show_name), con.escape (episode_name), season_num, episode_num))
+                     "VALUES (%s, %s, %s, %s, %s);",
+                     (movie_id, show_name, episode_name, season_num, episode_num))
         imdbcur.execute ("SELECT actor FROM episode_actors where show_name = ? AND season = ? AND episode = ?;",
                          (show_name, season_num, episode_num))
         actor_list = set(imdbcur.fetchall ())
         for i in actor_list:
-            cur.execute ("INSERT INTO actor VALUES ({}, {});"
-                         "".format (con.escape(i[0]), movie_id))
+            cur.execute ("INSERT INTO actor VALUES (%s, %s);", (i[0], movie_id))
         imdbcur.execute ("SELECT director FROM episode_directors where show_name = ? AND season = ? AND episode = ?;",
                          (show_name, season_num, episode_num))
         dir_list = imdbcur.fetchall ()
         for i in dir_list:
-            cur.execute ("INSERT INTO director VALUES ({}, {});"
-                         "".format (con.escape(i[0]), movie_id))
-    cur.execute ("INSERT INTO complete_seasons VALUES ({}, {}, 0);"
-                 "".format (con.escape (show_name), season_num));
+            cur.execute ("INSERT INTO director VALUES (%s, %s);", (i[0], movie_id))
+    cur.execute ("INSERT INTO complete_seasons VALUES (%s, %s, 0);", (show_name, season_num));
     imdbcon.rollback ()
     imdbcon.close ()
     print ()
@@ -581,7 +560,8 @@ def input_one_tv_season (dvd_id):
 
 def close_dvd (dvd_id):
     cur.execute ("SELECT dvd.name FROM dvd WHERE dvd.dvd_id = {};".format (dvd_id))
-    dvd_name = cur.fetchone ()[0]
+    dvd_list = cur.fetchall ()
+    dvd_name = dvd_list[0]
     print ("Successful insertion of movies for {}, dvd_id {}.".format (dvd_name, dvd_id))
     cur.execute ("SELECT movie.movie_id, movie.name, movie.year, movie.is_full_length FROM movie "
                  "INNER JOIN dvd_contents ON dvd_contents.movie_id = movie.movie_id "
@@ -634,22 +614,20 @@ def get_movie_id ():
                 continue
             else:
                 return
-        escaped_movie_name = con.escape (movie_name)
-        cur.execute ("SELECT * FROM movie WHERE movie.name = {};".format (escaped_movie_name))
+        cur.execute ("SELECT * FROM movie WHERE movie.name = %(name)s;", {'name': movie_name})
         rows = cur.fetchall ()
         cur.execute ("SELECT movie.movie_id, movie.name, amn.name, movie.year, movie.is_full_length "
                      "FROM alternate_movie_names amn INNER JOIN movie ON amn.movie_id = movie.movie_id "
-                     "WHERE amn.name = {};".format (escaped_movie_name))
+                     "WHERE amn.name = %(name)s;", {'name': movie_name})
         rows += cur.fetchall ()
         is_existing_movie = False;
         if len (rows) == 0:
-            escaped_move_name = con.escape (movie_name);
             cur.execute ("SELECT * FROM movie WHERE movie.name "
-                         "LIKE CONCAT ('%', {}, '%');".format (escaped_movie_name))
+                         "LIKE CONCAT ('%', %(name)s, '%');", {'name': movie_name})
             rows = cur.fetchall ()
             cur.execute ("SELECT movie.movie_id, movie.name, amn.name, movie.year, movie.is_full_length "
                          "FROM alternate_movie_names amn INNER JOIN movie ON amn.movie_id = movie.movie_id "
-                         "WHERE amn.name LIKE CONCAT ('%', {}, '%');".format (escaped_movie_name))
+                         "WHERE amn.name LIKE CONCAT ('%', %(name)s, '%');", {'name': movie_name})
             rows += cur.fetchall ()
         if len (rows) == 0:
             print ("No matching entries found. Please try again.");
@@ -705,13 +683,11 @@ def insert_people (movie_id, movie, year):
     imdbcur.execute ("SELECT actor FROM movie_actors where movie_id = ?;", (sqlite_movie_id, ))
     actor_list = imdbcur.fetchall ()
     for i in actor_list:
-        cur.execute ("INSERT INTO actor VALUES ({}, {});"
-                     "".format (con.escape(i[0]), movie_id))
+        cur.execute ("INSERT INTO actor VALUES (%s, %s);", (i[0], movie_id))
     imdbcur.execute ("SELECT director FROM movie_directors where movie_id = ?;", (sqlite_movie_id, ))
     dir_list = imdbcur.fetchall ()
     for i in dir_list:
-        cur.execute ("INSERT INTO director VALUES ({}, {});"
-                     "".format (con.escape(i[0]), movie_id))
+        cur.execute ("INSERT INTO director VALUES (%s, %s);", (i[0], movie_id))
     return
 
 def markwatched (movie_id):
