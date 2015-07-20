@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-import pymysql as mdb
+import mysql as mdb
 import sys
 import moviedb
 
@@ -20,7 +20,7 @@ try:
         moviedb.display_movie (movie_id)
         moviedb.commit_data ()
     moviedb.close_database ()
-except mdb.Error as e:
+except mdb.Connector.Error as e:
     print (e)
     sys.exit(1)
 except:

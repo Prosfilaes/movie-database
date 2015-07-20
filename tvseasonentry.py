@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-import pymysql as mdb
+import mysql.connector as mdb
 import sys
 import moviedb
 

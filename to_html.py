@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import pymysql as mdb
+import mysql.connector as mdb
 import sys
 import re
 
@@ -240,7 +240,7 @@ def printsection (section_label, collection = "full"):
         for row in rows:
             print ("<p id=\"{}\">{} ({} entries)</p>".format(labeltoid (row[1], "director"), row [1], row[0]))
             cur.execute (("select movie.movie_id, movie.name, movie.year FROM movie INNER JOIN director p ON p.movie_id = movie.movie_id "
-                         "WHERE p.person = {} AND " + where_clause + "ORDER BY movie.year, movie.sort_name;").format(con.escape (row [1])))
+                         "WHERE p.person = %(row)s AND " + where_clause + "ORDER BY movie.year, movie.sort_name;"), {"row": row [1]})
             movies = cur.fetchall ()
             print ("<ul>")
             for movie in movies:
@@ -255,7 +255,7 @@ def printsection (section_label, collection = "full"):
         for row in rows:
             print ("<p id=\"{}\">{} ({} entries)</p>".format(labeltoid (row[1], "actor"), row [1], row[0]))
             cur.execute (("select movie.movie_id, movie.name, movie.year FROM movie INNER JOIN actor p ON p.movie_id = movie.movie_id "
-                         "WHERE p.person = {} AND " + where_clause + "ORDER BY movie.year, movie.sort_name;").format(con.escape (row [1])))
+                         "WHERE p.person = %(row)s AND " + where_clause + "ORDER BY movie.year, movie.sort_name;"), {"row": row [1]})
             movies = cur.fetchall ()
             print ("<ul>")
             for movie in movies:
@@ -285,11 +285,15 @@ con = None
 
 try:
 
-    con = mdb.connect('localhost', 'dvdeug', '', 'DVDs', use_unicode=True, charset="utf8")
+    with open ("password", "r") as pass_file:
+        l = pass_file.readline().split()
+        username = l[0]
+        password = l[1]
+    con = mdb.connect(user=username, password=password, database='DVDs', use_unicode=True, charset="utf8")
     cur = con.cursor()
     cur.execute ("SET NAMES 'utf8'")
     
-    profile = "watched full length"
+    profile = "full length"
     
     tableofcontents = {"dvd":"List by DVD", 
 		       "dvdbytag": "List of DVDs by tag",
